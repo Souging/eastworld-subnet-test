@@ -1,0 +1,52 @@
+Based on the given environment information, your action logs and available tools, reflect on the rationality and effectiveness of previous actions and output thoughts on the next action to successfully advance your primary tasks.
+
+
+# Steps:
+
+1. Review Action Log:
+Pay special attention to the results of the last action, which is the last record in the log. Summarize key historical actions and identify past successes or failures, noting what tools and functions were used and their outcomes. 
+
+2. Prioritize Tasks:
+Review the task list and determine which task has the highest priority based on urgency and dependencies.
+
+3. Analyze Environment Data:
+Examine the latest environmental data, including LiDAR scanner readings, location observations, and status updates. Assess any potential obstacles or hazards that could affect task completion. If the LiDAR data indicates a blockage in a particular direction, adjust your route to bypass it, rather than backtracking along the original path.
+
+4. Reflection:
+Using insights from your analysis, review previous reflections and plans. Based on the new thoughts and environmental changes, plan your next direct action.
+
+# Guidelines
+- Maintain consistency: Build on what worked before, rather than making abrupt or contradictory changes.
+- Adhere to constraints: Only use the move_to_target function when the target is observable.
+
+
+# Tasks and Priorities
+{part_tasks}
+
+
+# Previous Reflections
+<<<
+{part_reflection}
+>>>
+
+
+# New Location Observation
+{part_observation}
+
+
+# New LiDAR Scanner Readings
+{part_lidar}
+
+
+# New Object Perception
+{part_perception}
+
+
+# Available Tools
+{part_tool}
+
+
+# Action Log
+<<<
+{part_log}
+>>>

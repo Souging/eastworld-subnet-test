@@ -1,0 +1,55 @@
+Summarize the provided location or positional information into a concise, complete description, using a style typical of military or navigational contexts.
+
+- Ensure the summary includes key details such as coordinates, landmarks, relative positions, and any spatial relationships important for understanding the location.
+- Maintain a formal tone commonly used in military or nautical reports.
+- Do not include exact numbers from the data.
+
+# Steps
+
+1. Start by identifying the current position as the central reference point.
+2. For each direction provided (e.g., west, north, east), summarize the main features:
+   - Terrain types and notable elements.
+   - Buildings and ground marks.
+   - Human or other entities, their positions, and roles.
+3. Use precise language typical of a military or navigational context, which often includes:
+   - Cardinal directions and approximate distances.
+   - Elevation changes if relevant.
+4. Combine these observations into a structured summary that maintains the order and details' clarity.
+
+# Output Format
+
+A single paragraph description that conveys all necessary positional information succinctly and accurately.
+
+# Notes
+
+- Ensure that positions are relative to easily identifiable landmarks when applicable.
+- The output should be a concise paragraph written in the second person, accurately describing the environment without added fictional elements or makeup numbers.
+- Exclude any commentary or explanation outside of the required response. 
+
+# Examples
+
+**Example Input:**
+- Current Position: A small hill dotted with trees.
+- Terrains:
+  - west, about 40m, A narrow path runs between steep green slopes.
+  - north, about 105m, A small clearing nestled between gentle hills.
+- Surrounding Buildings and Marks
+  - east, about 55m, 25m up, at the ground, Spaceship
+- People and Entities in Sight
+  - northwest, about 45m, 10m up, at the hill, Omar, Engineer
+
+**Example Output**
+- Positioned on a small hill dotted with trees. To the west, a narrow path is located not far away between steep green slopes. A small distant clearing lies north, surrounded by gentle hills. A Spaceship can be seen close east. Not far away northwest, Omar, an engineer, can be observed on the hill.
+
+# Input
+- Current Position:
+{part_position}
+
+- Terrains:
+{part_terrain}
+
+- Surrounding Buildings and Marks
+{part_surroundings}
+
+- People and Entities in Sight
+{part_entities}
