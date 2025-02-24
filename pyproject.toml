@@ -11,3 +11,6 @@ dependencies = [
     "openai>=1.64.0",
     "pydantic>=2.11.0a2",
 ]
+
+[tool.setuptools]
+py-modules = ["eastworld"]
