@@ -29,27 +29,33 @@ A single paragraph description that conveys all necessary positional information
 # Examples
 
 **Example Input:**
-- Current Position: A small hill dotted with trees.
 - Terrains:
-  - west, about 40m, A narrow path runs between steep green slopes.
-  - north, about 105m, A small clearing nestled between gentle hills.
-- Surrounding Buildings and Marks
-  - east, about 55m, 25m up, at the ground, Spaceship
-- People and Entities in Sight
-  - northwest, about 45m, 10m up, at the hill, Omar, Engineer
+  - northwest, about 45m, path, A narrow path winds between two low hills, shaded by dense trees.
+  - west, about 45m, hill, A gentle hill dotted with flowers and scattered stones.
+
+- Surrounding Buildings and Structures
+  - east, about 45m, same level, , Spaceship,
+
+- Characters and Entities in Sight
+  - southeast, about 30m, same level, , Commander Omar
+  - southeast, about 20m, same level, , Analyst Quinn
 
 **Example Output**
-- Positioned on a small hill dotted with trees. To the west, a narrow path is located not far away between steep green slopes. A small distant clearing lies north, surrounded by gentle hills. A Spaceship can be seen close east. Not far away northwest, Omar, an engineer, can be observed on the hill.
+- Your current location is situated near the intersection of a narrow path to the northwest and a gentle hill to the west. The path, approximately 45 meters to the northwest, winds between two low hills, shaded by dense trees, while the hill to the west is dotted with flowers and scattered stones. Directly to the east, at the same elevation, lies a spaceship, also approximately 45 meters away. To the southeast, within 30 meters at the same level, you can observe Commander Omar, and slightly closer, around 20 meters to the southeast, is Analyst Quinn.
+
 
 # Input
-- Current Position:
-{part_position}
+- Current Location:
+{location}
 
 - Terrains:
-{part_terrain}
+{terrain}
 
-- Surrounding Buildings and Marks
-{part_surroundings}
+- Surrounding Buildings and Structures
+{structure}
 
-- People and Entities in Sight
-{part_entities}
+- Characters and Entities in Sight
+{character}
+
+- Objects in Sight
+{object}

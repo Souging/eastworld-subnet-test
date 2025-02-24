@@ -21,32 +21,32 @@ Using insights from your analysis, review previous reflections and plans. Based 
 
 
 # Tasks and Priorities
-{part_tasks}
+{tasks}
 
 
 # Previous Reflections
 <<<
-{part_reflection}
+{reflection}
 >>>
 
 
-# New Location Observation
-{part_observation}
-
-
 # New LiDAR Scanner Readings
-{part_lidar}
+{lidar}
 
 
-# New Object Perception
-{part_perception}
+# Environment Perception
+{perception}
 
 
-# Available Tools
-{part_tool}
+# Items in Inventory
+{items}
 
 
-# Action Log
+# Available Actions
+{tool_list}
+
+
+# History Action Log
 <<<
-{part_log}
+{action_log}
 >>>

@@ -23,10 +23,10 @@ import asyncio
 import argparse
 import threading
 import time
-import bittensor as bt
-
 from typing import List, Union
 from traceback import print_exception
+
+import bittensor as bt
 
 from eastworld.base.neuron import BaseNeuron
 from eastworld.base.utils.weight_utils import (

@@ -17,10 +17,9 @@
 # DEALINGS IN THE SOFTWARE.
 
 import time
-import typing
 import random
+
 import bittensor as bt
-from collections import deque
 
 from eastworld.base.miner import BaseMinerNeuron
 from eastworld.protocol import Observation

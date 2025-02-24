@@ -20,7 +20,9 @@
 import os
 import subprocess
 import argparse
+
 import bittensor as bt
+
 from .logging import setup_events_logger
 
 
@@ -183,7 +185,7 @@ def add_validator_args(cls, parser):
         "--neuron.timeout",
         type=float,
         help="The timeout for each forward call in seconds.",
-        default=10,
+        default=20,
     )
 
     parser.add_argument(
@@ -246,10 +248,28 @@ def add_validator_args(cls, parser):
     )
 
     parser.add_argument(
-        "--eastworld.endpoint",
+        "--eastworld.endpoint_url",
         type=str,
-        help="The name of the project where you are sending the new run.",
+        help="Url endpoint of Eastworld server to fetch tasks and submit actions.",
         default="http://127.0.0.1:8080",
+    )
+    parser.add_argument(
+        "--eastworld.endpoint_auth_user",
+        type=str,
+        help="Basic auth username for authentication",
+        default="user",
+    )
+    parser.add_argument(
+        "--eastworld.endpoint_auth_password",
+        type=str,
+        help="Basic auth password for authentication",
+        default="password",
+    )
+    parser.add_argument(
+        "--eastworld.llm_model",
+        type=str,
+        help="The model to use for the LLM calls.",
+        default="gpt-4o",
     )
 
 

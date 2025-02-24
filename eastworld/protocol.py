@@ -61,15 +61,14 @@ class Observation(bt.Synapse):
 
     # Agent stats
     stats: dict
-    item: list[dict]
+    items: list[tuple]
 
     # Environment observations
-    surrounding: list[str]
-    interaction: list[str]
     scanner: dict
+    perception: str
 
-    # Action feedback
-    feedback: list[str]
+    # Action log
+    action_log: list[str]
 
     # Action
     action_space: list[dict]

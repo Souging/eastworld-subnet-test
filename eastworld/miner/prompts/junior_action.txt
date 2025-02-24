@@ -1,11 +1,11 @@
-Using insights from your analysis, plan your next action. Select tools and methods that align with task priorities and environmental conditions.
+Using insights from your analysis, plan your next action. Select tools and actions that align with task priorities and environmental conditions.
 
 
 # Tasks and Priorities
-{part_tasks}
+{tasks}
 
 
 # Reflections
 <<<
-{part_reflection}
+{reflection}
 >>>
