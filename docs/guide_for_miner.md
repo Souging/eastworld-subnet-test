@@ -1,4 +1,4 @@
-# Miners Guide
+# Miners Guide ⛏️
 
 ---
 

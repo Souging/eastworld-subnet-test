@@ -1,3 +1,3 @@
-# Validators Guide
+# Validators Guide ⚖️
 
 ---

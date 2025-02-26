@@ -3,6 +3,8 @@
 # **Eastworld** <!-- omit in toc -->
 Next-Generation Gyms for Next-Generation AI Agents, on Bittensor (Testnet SN288)
 
+[Discord(Bittensor)](https://discord.gg/QbkDMwpGzG) • [Discord(Livestream)](https://discord.gg/PW67GvE9Ee) • [X](https://x.com/Eastworld_AI)
+
 </div>
 
 ---
