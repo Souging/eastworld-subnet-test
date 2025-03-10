@@ -41,6 +41,7 @@ class Validator(BaseValidatorNeuron):
 
     http_client: httpx.AsyncClient
     http_auth: httpx.BasicAuth
+    inactive_miners: dict
 
     def __init__(self, config=None):
         super(Validator, self).__init__(config=config)
@@ -53,6 +54,8 @@ class Validator(BaseValidatorNeuron):
             username=self.config.eastworld.endpoint_auth_user,
             password=self.config.eastworld.endpoint_auth_password,
         )
+
+        self.inactive_miners = {}
 
     async def forward(self):
         """
@@ -103,6 +106,13 @@ class Validator(BaseValidatorNeuron):
                 await asyncio.sleep(10)
                 return
 
+            # Skip the miner for a certain period if it is inactive.
+            if self.config.subtensor.network == "test":
+                notuntil, interval = self.inactive_miners.get(ob_uid, (0, 0))
+                if notuntil and notuntil > time.time():
+                    bt.logging.info(f"Skip for inactive miner #{ob_uid}.")
+                    return
+
             axon = self.metagraph.axons[ob_uid]
             bt.logging.info(f"Selected miners: {ob_uid} {axon.ip}:{axon.port}")
             miner_uids = np.array([ob_uid])
@@ -121,10 +131,33 @@ class Validator(BaseValidatorNeuron):
             # Log the results for monitoring purposes.
             bt.logging.trace(f"Received responses: {responses}")
 
-            await self.submit_action(ob_turns, ob_uid, responses[0])
+            synapse: bt.Synapse = responses[0]
+            # Add skip time for inactive miners.
+            if self.config.subtensor.network == "test":
+                if synapse.is_failure or not len(synapse.action):
+                    notuntil, interval = self.inactive_miners.get(
+                        ob_uid, (time.time(), 60)
+                    )
+                    # Increase the skip time by 3 minutes each time, up to 30 minutes.
+                    interval = min(interval + 180, 1800)
+                    self.inactive_miners[ob_uid] = (notuntil + interval, interval)
+                    bt.logging.info(
+                        f"Inactive miner #{ob_uid}. Skip for {interval} seconds."
+                    )
+                else:
+                    self.inactive_miners.pop(ob_uid, None)
+
+            if synapse.is_failure or not len(synapse.action):
+                bt.logging.warning(
+                    f"Failed to get action from miner #{ob_uid}. Code: {synapse.dendrite.status_code}"
+                )
+                return
+
+            await self.submit_action(ob_turns, ob_uid, synapse)
             await self.update_scores()
         except Exception as e:
             traceback.print_exc()
+            await asyncio.sleep(10)
             raise e
 
     async def get_observation(self) -> dict:
