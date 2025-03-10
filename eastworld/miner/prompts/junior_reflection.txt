@@ -17,34 +17,32 @@ Using insights from your analysis, review previous reflections and plans. Based 
 
 # Guidelines
 - Maintain consistency: Build on what worked before, rather than making abrupt or contradictory changes.
-- Adhere to constraints: Only use the move_to_target function when the target is observable.
-
+- Adhere to constraints: Only use the move_to_target function call when you have the detail location of the target.
+- Focus on next action: The output should be concise, clear, and in first-person language, focusing on the next action.
+- Plain text output: The output should be in plain text, without any special formatting or characters. 
 
 # Tasks and Priorities
 {tasks}
 
-
-# Previous Reflections
-<<<
-{reflection}
->>>
-
-
-# New LiDAR Scanner Readings
+# LiDAR Data
 {lidar}
 
+# Odometry Data
+{odometry}
 
 # Environment Perception
 {perception}
 
-
 # Items in Inventory
 {items}
-
 
 # Available Actions
 {tool_list}
 
+# Previous Reflection and Plan
+<<<
+{reflection}
+>>>
 
 # History Action Log
 <<<

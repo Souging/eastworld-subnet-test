@@ -69,14 +69,19 @@ class Miner(BaseMinerNeuron):
             "northwest",
         ]
         weights = [1] * len(directions)
-        if synapse.scanner.get("lidar"):
-            readings = dict(synapse.scanner["lidar"])
+        if synapse.sensor.lidar:
+            readings = {}
+            for data in synapse.sensor.lidar:
+                readings[data[0]] = data[2]
             for i, d in enumerate(directions):
                 weights[i] = levels.get(readings.get(d), 1)
 
         choice = random.choices(directions, weights=weights, k=1)[0]
         synapse.action = [
-            {"name": "move_in_direction", "arguments": {"direction": choice}}
+            {
+                "name": "move_in_direction",
+                "arguments": {"direction": choice, "distance": 10.0},
+            }
         ]
         return synapse
 

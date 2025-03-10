@@ -5,7 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "bittensor==9.0.1",
+    "bittensor==9.0.4",
     "httpx[http2]>=0.28.1",
     "json-repair>=0.35.0",
     "openai>=1.64.0",

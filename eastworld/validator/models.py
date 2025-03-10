@@ -1,5 +1,4 @@
 # The MIT License (MIT)
-# Copyright © 2023 Yuma Rao
 # Copyright © 2025 Eastworld AI
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
@@ -16,54 +15,48 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-import bittensor as bt
-import pydantic
+from pydantic import BaseModel
 
 
-class Item(pydantic.BaseModel):
-    # Item name
+class EWItem(BaseModel):
     name: str
-    # Item description
     description: str
-    # Item count
     count: int
 
 
-class Sensor(pydantic.BaseModel):
-    # LiDAR data to represent obstacles in different directions. Example: ("north", "5.0m", "intense")
+class EWObservation(BaseModel):
     lidar: list[tuple[str, ...]]
-    # Odometry data to represent the agent's movement. Example: ("north", "5.0m")
     odometry: tuple[str, ...]
+    # Notable terrains features around.
+    terrain: list[tuple[str, ...]]
+    weather: list[tuple[str, ...]]
+    # Agent's current location description.
+    location: list[tuple[str, ...]]
+    # Structures around.
+    structure: list[tuple[str, ...]]
+    static: list[tuple[str, ...]]
+    dynamic: list[tuple[str, ...]]
 
 
-class Perception(pydantic.BaseModel):
-    # Perception of the Environment Perception Layer
-    environment: str
-    # Perception of the Object Detection and Classification Layer
-    objects: str
-
-
-class Observation(bt.Synapse):
-    """ """
-
-    # Agent stats
+class EWContext(BaseModel):
+    # Agent integrity, energy level, etc. Will be implemented in the future.
     stats: dict
-
-    # Items in agent's inventory
-    items: list[Item]
-
-    # Environment observations. MUST set default None, Synapse creates dummy instance in the headers.
-    sensor: Sensor = None
-    perception: Perception = None
-
-    # Feedback of last action
-    action_log: list[str]
-
-    # Available actions (function calls)
-    action_space: list[dict]
-
-    # Miner's action response
+    # Items in Agent's inventory.
+    item: list[EWItem]
+    # Environment observation.
+    observation: EWObservation
+    # Environment interaction to Agent. Conversation started by others, environmental damage, etc.
+    interaction: list[tuple[str, ...]]
+    # Available function to call to perform actions.
     action: list[dict]
+    # Action execution log of last round.
+    log: list[str]
 
-    # Reward (not implemented so far)
-    reward: float
+
+class EWApiResponse(BaseModel):
+    code: int
+    message: str
+    turns: int = None
+    uid: int = None
+    key: str = None
+    context: EWContext = None

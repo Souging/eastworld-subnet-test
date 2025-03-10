@@ -28,7 +28,8 @@ import numpy as np
 from openai import AsyncOpenAI
 
 from eastworld.base.validator import BaseValidatorNeuron
-from eastworld.protocol import Observation
+from eastworld.protocol import Observation, Sensor, Perception, Item
+from eastworld.validator.models import EWApiResponse, EWContext, EWObservation
 from eastworld.utils.uids import check_uid_availability
 
 
@@ -69,54 +70,48 @@ class Validator(BaseValidatorNeuron):
         """
         try:
             # Call Eastworld API to get miner's state and observation.
-            data = await self.get_observation()
+            res = await self.get_observation()
 
-            ob_status = data["code"]
-            ob_message = data["message"]
-            if ob_status == 429:
+            if res.code == 429:
                 bt.logging.info("The next turn is not available yet. Wait for 10s.")
                 await asyncio.sleep(10)
                 return
-            elif ob_status != 200:
+            elif res.code != 200:
                 bt.logging.error(
-                    f"Failed to get observation from Eastworld. {ob_status} {ob_message}"
+                    f"Failed to get observation from Eastworld. {res.code} {res.message}"
                 )
                 await asyncio.sleep(10)
                 return
 
-            # Miner data
-            ob_turns: int = data["turns"]
-            ob_uid: int = data["uid"]
-            ob_key: str = data["key"]
-
+            # Validate the UID and hotkey from the API.
             uid_is_available = check_uid_availability(
-                self.metagraph, ob_uid, self.config.neuron.vpermit_tao_limit
+                self.metagraph, res.uid, self.config.neuron.vpermit_tao_limit
             )
             bt.logging.debug(
-                f"UID {ob_uid} {self.metagraph.axons[ob_uid].hotkey} {uid_is_available}"
+                f"UID {res.uid} {self.metagraph.axons[res.uid].hotkey} {uid_is_available}"
             )
             if not uid_is_available:
-                bt.logging.info(f"UID {ob_uid} from API is not available for mining.")
+                bt.logging.info(f"UID {res.uid} from API is not available for mining.")
                 await asyncio.sleep(10)
                 return
-            if ob_key != self.metagraph.axons[ob_uid].hotkey:
+            if res.key != self.metagraph.axons[res.uid].hotkey:
                 bt.logging.info(
-                    f"UID {ob_uid} hotkey mismatch API:{ob_key} Metagraph:{self.metagraph.axons[ob_uid].hotkey}"
+                    f"UID {res.uid} hotkey mismatch API:{res.key} Metagraph:{self.metagraph.axons[res.uid].hotkey}"
                 )
                 await asyncio.sleep(10)
                 return
 
             # Skip the miner for a certain period if it is inactive.
             if self.config.subtensor.network == "test":
-                notuntil, interval = self.inactive_miners.get(ob_uid, (0, 0))
+                notuntil, interval = self.inactive_miners.get(res.uid, (0, 0))
                 if notuntil and notuntil > time.time():
-                    bt.logging.info(f"Skip for inactive miner #{ob_uid}.")
+                    bt.logging.info(f"Skip for inactive miner #{res.uid}.")
                     return
 
-            axon = self.metagraph.axons[ob_uid]
-            bt.logging.info(f"Selected miners: {ob_uid} {axon.ip}:{axon.port}")
-            miner_uids = np.array([ob_uid])
-            synapse = await self.create_synapse(data)
+            axon = self.metagraph.axons[res.uid]
+            bt.logging.info(f"Selected miners: {res.uid} {axon.ip}:{axon.port}")
+            miner_uids = np.array([res.uid])
+            synapse = await self.create_synapse(res.context)
 
             # The dendrite client queries the network.
             timeout = self.config.neuron.timeout
@@ -136,32 +131,38 @@ class Validator(BaseValidatorNeuron):
             if self.config.subtensor.network == "test":
                 if synapse.is_failure or not len(synapse.action):
                     notuntil, interval = self.inactive_miners.get(
-                        ob_uid, (time.time(), 60)
+                        res.uid, (time.time(), 60)
                     )
                     # Increase the skip time by 3 minutes each time, up to 30 minutes.
                     interval = min(interval + 180, 1800)
-                    self.inactive_miners[ob_uid] = (notuntil + interval, interval)
+                    self.inactive_miners[res.uid] = (notuntil + interval, interval)
                     bt.logging.info(
-                        f"Inactive miner #{ob_uid}. Skip for {interval} seconds."
+                        f"Inactive miner #{res.uid}. Skip for {interval} seconds."
                     )
                 else:
-                    self.inactive_miners.pop(ob_uid, None)
+                    self.inactive_miners.pop(res.uid, None)
 
             if synapse.is_failure or not len(synapse.action):
                 bt.logging.warning(
-                    f"Failed to get action from miner #{ob_uid}. Code: {synapse.dendrite.status_code}"
+                    f"Failed to get action from miner #{res.uid}. Code: {synapse.dendrite.status_code}"
                 )
                 return
 
-            await self.submit_action(ob_turns, ob_uid, synapse)
+            await self.submit_action(res.turns, res.uid, synapse)
             await self.update_scores()
+        except httpx.ConnectError as e:
+            # Eastworld server is down. Retry after 60 seconds.
+            bt.logging.error(
+                f"Failed to connect to Eastworld server: {e}. Retry after 60s."
+            )
+            await asyncio.sleep(60)
         except Exception as e:
             traceback.print_exc()
             await asyncio.sleep(10)
             raise e
 
-    async def get_observation(self) -> dict:
-        """ """
+    async def get_observation(self) -> EWApiResponse:
+        """Fetches the observation data from the Eastworld API."""
         endpoint_url = urlparse(self.config.eastworld.endpoint_url)
         endpoint = f"{endpoint_url.scheme}://{endpoint_url.netloc}/sn/env"
         req = self.http_client.build_request("GET", endpoint)
@@ -171,8 +172,13 @@ class Validator(BaseValidatorNeuron):
                 f"Failed to get observation from Eastworld. {r.status_code} {r.text}"
             )
 
-        ob = r.json()
-        return ob
+        ob_data = r.json()
+        try:
+            response = EWApiResponse.model_validate(ob_data)
+            return response
+        except Exception as e:
+            bt.logging.error(f"Failed to parse API response: {e}")
+            raise
 
     async def submit_action(self, turns: int, uid: int, synapse: Observation):
         """ """
@@ -206,92 +212,83 @@ class Validator(BaseValidatorNeuron):
             f"Action of miner UID {uid} in turn {turns} submitted successfully."
         )
 
-    async def create_synapse(self, data: dict) -> Observation:
-        context = data["context"]
-
-        # Agent integrity, energy level, etc. Will be implemented in the future.
-        agent_stats = context["stats"]
-        # Items in Agent's inventory.
-        agent_item = context["item"]
-        # Environment observation.
-        agent_ob = context["observation"]
-        # Environment interaction to Agent. Conversation started by others, environmental damage, etc.
-        agent_interaction = context["interaction"]
-
-        # Available function to call to perform actions.
-        action_space = context["action"]
-        # Action execution log of last round.
-        action_log = context["log"]
-
-        # Agent's current location description.
-        ob_location = agent_ob["location"]
-        # Notable terrains features around.
-        ob_terrain = agent_ob["terrain"]
-        # Structures around.
-        ob_structure = agent_ob["structure"]
-        # Intelligent entities around.
-        ob_character = agent_ob["character"]
-        # Interactive objects around.
-        ob_object = agent_ob["object"]
-        # Environment description. Wind, temperature, weather, etc. Will be implemented in the future.
-        ob_env = agent_ob["environment"]
-        # LiDAR scanner data.
-        ob_lidar = agent_ob["lidar"]
-
-        # Synapse data
-        # scanner: More accurate data obtained from the instrument and sensors.
-        scanner = {"lidar": ob_lidar}
-        # perception: General output of detecting, classifying, and ranging objects in the environment.
-        perception = ""
+    async def create_synapse(self, context: EWContext) -> Observation:
+        ob = context.observation
+        sensor = Sensor(lidar=ob.lidar, odometry=ob.odometry)
+        perception = Perception(environment="", objects="")
 
         # Summarize perception with LLM
-        prompt_context = {
-            "location": "",
-            "terrain": "",
-            "structure": "",
-            "character": "",
-            "object": "",
-        }
-        for loc in ob_location:
-            prompt_context["location"] += f"- {', '.join(loc)}\n"
-        for t in ob_terrain:
-            prompt_context["terrain"] += f"- {', '.join(t)}\n"
-        for s in ob_structure:
-            prompt_context["structure"] += f"- {', '.join(s)}\n"
-        for c in ob_character:
-            prompt_context["character"] += f"- {', '.join(c)}\n"
-        for o in ob_object:
-            prompt_context["object"] += f"- {', '.join(o)}\n"
+        environment_prompt = ""
+        if any((ob.terrain, ob.weather, ob.location)):
+            environment_context = {
+                "terrain": "\n".join([f"- {', '.join(x)}" for x in ob.terrain])
+                or "N/A",
+                "weather": "\n".join([f"- {', '.join(x)}" for x in ob.weather])
+                or "N/A",
+                "location": "\n".join([f"- {', '.join(x)}" for x in ob.location])
+                or "N/A",
+            }
+            with open("eastworld/validator/prompts/environment.txt", "r") as f:
+                prompt_tpl = f.read()
+                environment_prompt = prompt_tpl.format(**environment_context)
 
-        messages = [{"role": "user", "content": ""}]
-        with open("eastworld/validator/prompts/perception.txt", "r") as f:
-            prompt_tpl = f.read()
-            messages[0]["content"] = prompt_tpl.format(**prompt_context)
+        objects_prompt = ""
+        if any((ob.structure, ob.static, ob.dynamic)):
+            objects_context = {
+                "structure": "\n".join(
+                    [f"- {', '.join(x[:-1])}\n{x[-1]}" for x in ob.structure]
+                )
+                or "N/A",
+                "static": "\n".join(
+                    [f"- {', '.join(x[:-1])}\n{x[-1]}" for x in ob.static]
+                )
+                or "N/A",
+                "dynamic": "\n".join(
+                    [f"- {', '.join(x[:-1])}\n{x[-1]}" for x in ob.dynamic]
+                )
+                or "N/A",
+            }
+            with open("eastworld/validator/prompts/objects.txt", "r") as f:
+                prompt_tpl = f.read()
+                objects_prompt = prompt_tpl.format(**objects_context)
 
-        # bt.logging.debug(
-        #     f"Prompt in perception summarization: \n{messages[0]['content']}"
-        # )
-        async with httpx.AsyncClient() as client:
-            llm = AsyncOpenAI(http_client=client)
+        async def get_llm_response(prompt):
+            if not prompt:
+                return ""
+            async with httpx.AsyncClient() as client:
+                llm = AsyncOpenAI(http_client=client)
+                response = await llm.chat.completions.create(
+                    model=self.config.eastworld.llm_model,
+                    messages=[{"role": "user", "content": prompt}],
+                )
+                content = response.choices[0].message.content.strip()
+                bt.logging.trace(f"LLM response in perception: \n{content}")
+                return content
 
-            response = await llm.chat.completions.create(
-                model=self.config.eastworld.llm_model,
-                messages=messages,
-            )
-            perception = response.choices[0].message.content
+        environment_content, objects_content = await asyncio.gather(
+            get_llm_response(environment_prompt),
+            get_llm_response(objects_prompt),
+        )
 
-        bt.logging.debug(f"LLM response in perception summarization: \n{perception}")
+        # Update perception with LLM response
+        perception.environment = environment_content
+        perception.objects = objects_content
+
+        items = [
+            Item(name=x.name, description=x.description, count=x.count)
+            for x in context.item
+        ]
+
         synapse = Observation(
-            stats=agent_stats,
-            items=agent_item,
-            scanner=scanner,
+            stats=context.stats,
+            items=items,
+            sensor=sensor,
             perception=perception,
-            action_log=action_log,
-            action_space=action_space,
+            action_log=context.log,
+            action_space=context.action,
             action=[],
             reward=0.0,
         )
-
         return synapse
 
     async def update_scores(self):

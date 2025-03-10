@@ -16,6 +16,7 @@
 # DEALINGS IN THE SOFTWARE.
 
 import datetime
+import traceback
 from collections import deque
 
 import bittensor as bt
@@ -36,8 +37,8 @@ class ActionLog(BaseModel):
 
 
 class JuniorAgent(BaseMinerNeuron):
-    reflection: str
-    action_log: deque
+    memory_reflection: deque
+    memory_action: deque
 
     prompt_system_tpl: str
     prompt_reflection_tpl: str
@@ -48,8 +49,8 @@ class JuniorAgent(BaseMinerNeuron):
     def __init__(self, config=None):
         super(JuniorAgent, self).__init__(config=config)
 
-        self.reflection = ""
-        self.action_log = deque(maxlen=100)
+        self.memory_reflection = deque(maxlen=100)
+        self.memory_action = deque(maxlen=100)
 
         with open("eastworld/miner/prompts/junior_system.txt", "r") as f:
             self.prompt_system_tpl = f.read()
@@ -60,29 +61,39 @@ class JuniorAgent(BaseMinerNeuron):
 
         self.http_client = httpx.AsyncClient()
 
-    def log_action(self, action: str):
+    def push_reflection_memory(self, reflection: str):
+        self.memory_reflection.append(reflection)
+
+    def push_action_memory(self, action: str):
         action_log = ActionLog(
             timestamp=datetime.datetime.now(),
             action=action.strip(),
             feedback="",
             repeat_times=1,
         )
-        self.action_log.append(action_log)
+        self.memory_action.append(action_log)
 
-    def log_feedback(self, feedback: str):
-        if not self.action_log:
-            # Miner may have restarted
+    def update_action_memory(self, feedback: str):
+        """
+        This function updates the feedback of the last action in the memory.
+
+        The action log is added to the memory immediately after the submission. But the action
+        result is only available in the next observation.
+        """
+        if not self.memory_action:
+            # Miner may have restarted and the last action is lost
             return
 
-        last_log = self.action_log[-1]
+        last_log = self.memory_action[-1]
         if last_log.feedback:
-            # The last log already has feedback, unexpected
+            # The last log already has feedback, unexpected behavior
             return
         last_log.feedback = feedback.strip()
 
-        if len(self.action_log) < 2:
+        # Try to merge the last two logs if they are the same
+        if len(self.memory_action) < 2:
             return
-        previous_log = self.action_log[-2]
+        previous_log = self.memory_action[-2]
         if (
             previous_log.action == last_log.action
             and previous_log.feedback == last_log.feedback
@@ -90,33 +101,26 @@ class JuniorAgent(BaseMinerNeuron):
             # Merge the two logs with the same action and feedback
             previous_log.timestamp = last_log.timestamp
             previous_log.repeat_times += 1
-            self.action_log.pop()
+            self.memory_action.pop()
 
     async def forward(self, synapse: Observation) -> Observation:
         bt.logging.info(f"Feedback of previous action: {synapse.action_log}")
-        self.log_feedback("\n\n".join(synapse.action_log))
-
-        # Generate new action
-        messages = []
-        messages.append({"role": "system", "content": self.prompt_system_tpl.format()})
+        self.update_action_memory("\n\n".join(synapse.action_log))
 
         # Hardcoded tasks for demonstration
         tasks = """
-  - Compete with other agents to achieve superior task performance: high priority
-  - Locate a power generator: high priority
-  - Survey the surroundings: medium priority
+  - Compete with other agents by completing tasks to achieve superior performance: high priority
+  - Explore the surroundings to discover new opportunities: medium priority
 """
         lidar = ""
-        if synapse.scanner.get("lidar"):
-            for items in synapse.scanner["lidar"]:
-                lidar += f"  - {', '.join(items)}\n"
-        perception = synapse.perception
+        for items in synapse.sensor.lidar:
+            lidar += f"  - {', '.join(items)}\n"
+        odometry = f"  - {', '.join(synapse.sensor.odometry)}\n"
+        perception = synapse.perception.environment + "\n" + synapse.perception.objects
 
         items = ""
         for item in synapse.items:
-            if len(item) < 3:
-                continue
-            items += f"  - {item[0]}, {item[1]}, x{item[2]}\n"
+            items += f"  - {item.name}, Amount {item.count}, Description: {item.description.strip()}\n"
 
         tool_list = ""
         for act in synapse.action_space:
@@ -125,36 +129,40 @@ class JuniorAgent(BaseMinerNeuron):
             )
 
         action_log = ""
-        for idx, l in enumerate(self.action_log):
+        for idx, l in enumerate(self.memory_action):
             l: ActionLog
             repeat_str = (
                 f" (repeated {l.repeat_times} times)" if l.repeat_times > 1 else ""
             )
             action_log += f"""
 ## Log {idx + 1}
-    Action: {l.action}
-    Result: {l.feedback} {repeat_str}
+    Action: {l.action} {repeat_str}
+    Result: {l.feedback}
 """
 
         llm_client = AsyncOpenAI(http_client=self.http_client)
         try:
             reflection_context = {
                 "tasks": tasks,
-                "reflection": self.reflection,
+                "reflection": (
+                    self.memory_reflection[-1] if self.memory_reflection else "N\A"
+                ),
                 "lidar": lidar,
+                "odometry": odometry,
                 "perception": perception,
                 "items": items,
                 "tool_list": tool_list,
                 "action_log": action_log,
             }
             # Reflection first
-            messages.append(
+            messages = [
+                {"role": "system", "content": self.prompt_system_tpl.format()},
                 {
                     "role": "user",
                     "content": self.prompt_reflection_tpl.format(**reflection_context),
-                }
-            )
-            bt.logging.trace(messages[1]["content"], ">>>> Reflection Message")
+                },
+            ]
+            bt.logging.trace(messages[1]["content"], ">>>> Reflection Prompt")
 
             response = await llm_client.chat.completions.create(
                 model="gpt-4o",
@@ -167,21 +175,23 @@ class JuniorAgent(BaseMinerNeuron):
                 bt.logging.warning(f"LLM generation failed: {response}")
                 return synapse
 
-            self.reflection = response.choices[0].message.content
+            self.push_reflection_memory(response.choices[0].message.content.strip())
+            bt.logging.debug(self.memory_reflection[-1], ">>>> Reflection")
 
             # Take action then
             action_context = {
                 "tasks": tasks,
-                "reflection": self.reflection,
+                "reflection": (
+                    self.memory_reflection[-1] if self.memory_reflection else "N\A"
+                ),
             }
             messages = [
-                {"role": "system", "content": self.prompt_system_tpl.format()},
                 {
                     "role": "user",
                     "content": self.prompt_action_tpl.format(**action_context),
                 },
             ]
-            bt.logging.trace(messages[1]["content"], ">>>> Action Message")
+            bt.logging.trace(messages[0]["content"], ">>>> Action Prompt")
             # bt.logging.trace(synapse.action_space, ">>>> Action Space")
             response = await llm_client.chat.completions.create(
                 model="gpt-4o-mini",
@@ -205,15 +215,15 @@ class JuniorAgent(BaseMinerNeuron):
                 }
 
                 synapse.action = [parsed_action]
-                self.log_action(
+                self.push_action_memory(
                     f"{action.name}, "
                     + ", ".join(
                         [f"{k}: {v}" for k, v in parsed_action["arguments"].items()]
                     )
                 )
         except APITimeoutError as e:
-            bt.logging.error(e)
+            bt.logging.error(f"API Timeout Error: {e}")
         except Exception as e:
-            bt.logging.error(e)
+            traceback.print_exc()
         finally:
             return synapse
