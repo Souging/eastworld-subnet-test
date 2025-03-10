@@ -80,7 +80,7 @@ Check the `protocol.Observation` synapse definition. The validator will send the
 
 * `stats`: Data such as Agent integrity, energy level, etc. (Not yet implemented).
 * `items`: The items in Agent's inventory.
-* `scanner`: LiDAR scanner data indicating distance and space. This will be explained further in the next section.
+* `sensor`: LiDAR and Odometry data indicating distance and space. This will be explained further in the next section.
 * `perception`: A text description of the surrounding environment, including terrain, characters, and objects.
 * `action_log`: The result of the last action executed, which will be provided in the next new observation (synapse).
 * `action_space`: A list of available actions in the standard LLM function call definition format.
@@ -124,7 +124,7 @@ Here are the basic actions for miners so far. You should not hardcode them in th
   - move_in_direction: Moves in the specified direction.
   - move_to_target: Move towards the specified target entity. Target can be a character or a location and must be in sight.
   - talk_to: Talk to other entity. Accepts the name of the target and the content you want to say. The target may not hear you if you're too far away.
-  - check: Examine a specified target to obtain detailed information, such as character status, item identification, or device operation instructions.
+  - inspect: Examine a specified target to obtain detailed information, such as character status, item identification, or device operation instructions.
   - collect: Collect resources or items from the specified target entity.
   - discard_item: Discard items from the inventory.
 
@@ -140,3 +140,4 @@ The scoring system is still undergoing adjustments and improvements. The basic i
 
 * Action Score: Small, easy-to-earn scores that reward miners for VALID actions.
 * Quest Score: A larger score, but one that requires a series of planned actions to reward good higher-level design.
+
