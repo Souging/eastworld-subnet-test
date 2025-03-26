@@ -169,6 +169,12 @@ def add_miner_args(cls, parser):
         default="opentensor-dev",
         help="Wandb entity to log to.",
     )
+    parser.add_argument(
+        "--eastworld.llm_model",
+        type=str,
+        help="The model to use for the LLM calls.",
+        default="gpt-4o",
+    )
 
 
 def add_validator_args(cls, parser):
@@ -230,7 +236,7 @@ def add_validator_args(cls, parser):
         "--neuron.vpermit_tao_limit",
         type=int,
         help="The maximum number of TAO allowed to query a validator with a vpermit.",
-        default=4096,
+        default=409600,
     )
 
     parser.add_argument(
@@ -251,19 +257,7 @@ def add_validator_args(cls, parser):
         "--eastworld.endpoint_url",
         type=str,
         help="Url endpoint of Eastworld server to fetch tasks and submit actions.",
-        default="http://127.0.0.1:8080",
-    )
-    parser.add_argument(
-        "--eastworld.endpoint_auth_user",
-        type=str,
-        help="Basic auth username for authentication",
-        default="user",
-    )
-    parser.add_argument(
-        "--eastworld.endpoint_auth_password",
-        type=str,
-        help="Basic auth password for authentication",
-        default="password",
+        default="https://testnet.eastworld.ai",
     )
     parser.add_argument(
         "--eastworld.llm_model",

@@ -19,6 +19,7 @@
 import time
 import random
 
+from dotenv import load_dotenv
 import bittensor as bt
 
 from eastworld.base.miner import BaseMinerNeuron
@@ -88,6 +89,8 @@ class Miner(BaseMinerNeuron):
 
 # This is the main function, which runs the miner.
 if __name__ == "__main__":
+    load_dotenv()
+
     with JuniorAgent() as miner:
         while True:
             bt.logging.info(f"Miner is running... {time.time()}")

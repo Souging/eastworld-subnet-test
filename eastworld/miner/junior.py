@@ -145,7 +145,7 @@ class JuniorAgent(BaseMinerNeuron):
             reflection_context = {
                 "tasks": tasks,
                 "reflection": (
-                    self.memory_reflection[-1] if self.memory_reflection else "N\A"
+                    self.memory_reflection[-1] if self.memory_reflection else "N/A"
                 ),
                 "lidar": lidar,
                 "odometry": odometry,
@@ -165,7 +165,7 @@ class JuniorAgent(BaseMinerNeuron):
             bt.logging.trace(messages[1]["content"], ">>>> Reflection Prompt")
 
             response = await llm_client.chat.completions.create(
-                model="gpt-4o",
+                model=self.config.eastworld.llm_model,
                 messages=messages,
                 max_completion_tokens=1024,
                 timeout=20,
@@ -182,7 +182,7 @@ class JuniorAgent(BaseMinerNeuron):
             action_context = {
                 "tasks": tasks,
                 "reflection": (
-                    self.memory_reflection[-1] if self.memory_reflection else "N\A"
+                    self.memory_reflection[-1] if self.memory_reflection else "N/A"
                 ),
             }
             messages = [
@@ -194,7 +194,7 @@ class JuniorAgent(BaseMinerNeuron):
             bt.logging.trace(messages[0]["content"], ">>>> Action Prompt")
             # bt.logging.trace(synapse.action_space, ">>>> Action Space")
             response = await llm_client.chat.completions.create(
-                model="gpt-4o-mini",
+                model=self.config.eastworld.llm_model,
                 messages=messages,
                 tools=synapse.action_space,
                 tool_choice="required",

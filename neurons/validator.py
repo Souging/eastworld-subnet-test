@@ -25,6 +25,7 @@ from urllib.parse import urlparse
 import bittensor as bt
 import httpx
 import numpy as np
+from dotenv import load_dotenv
 from openai import AsyncOpenAI
 
 from eastworld.base.validator import BaseValidatorNeuron
@@ -41,7 +42,6 @@ class Validator(BaseValidatorNeuron):
     """
 
     http_client: httpx.AsyncClient
-    http_auth: httpx.BasicAuth
     inactive_miners: dict
 
     def __init__(self, config=None):
@@ -51,11 +51,6 @@ class Validator(BaseValidatorNeuron):
         self.load_state()
 
         self.http_client = httpx.AsyncClient()
-        self.http_auth = httpx.BasicAuth(
-            username=self.config.eastworld.endpoint_auth_user,
-            password=self.config.eastworld.endpoint_auth_password,
-        )
-
         self.inactive_miners = {}
 
     async def forward(self):
@@ -161,12 +156,24 @@ class Validator(BaseValidatorNeuron):
             await asyncio.sleep(10)
             raise e
 
+    def gen_http_auth(self) -> httpx.BasicAuth:
+        """Generates the HTTP Basic Auth object for the Eastworld API with validator hotkey."""
+        keypair = self.wallet.hotkey
+        timestamp = int(time.time())
+        message = f"<Bytes>Eastworld AI {timestamp}</Bytes>"
+        signature = keypair.sign(data=message)
+
+        return httpx.BasicAuth(
+            username=f"{keypair.ss58_address}|{timestamp}",
+            password=signature.hex(),
+        )
+
     async def get_observation(self) -> EWApiResponse:
         """Fetches the observation data from the Eastworld API."""
         endpoint_url = urlparse(self.config.eastworld.endpoint_url)
         endpoint = f"{endpoint_url.scheme}://{endpoint_url.netloc}/sn/env"
         req = self.http_client.build_request("GET", endpoint)
-        r = await self.http_client.send(req, auth=self.http_auth)
+        r = await self.http_client.send(req, auth=self.gen_http_auth())
         if r.status_code != 200:
             raise Exception(
                 f"Failed to get observation from Eastworld. {r.status_code} {r.text}"
@@ -198,7 +205,7 @@ class Validator(BaseValidatorNeuron):
         }
         req = self.http_client.build_request("POST", endpoint, json=data)
 
-        r = await self.http_client.send(req, auth=self.http_auth)
+        r = await self.http_client.send(req, auth=self.gen_http_auth())
         if r.status_code != 200:
             raise Exception(
                 f"Failed to submit action to Eastworld server. {r.status_code} {r.text}"
@@ -256,7 +263,7 @@ class Validator(BaseValidatorNeuron):
             if not prompt:
                 return ""
             async with httpx.AsyncClient() as client:
-                llm = AsyncOpenAI(http_client=client)
+                llm = AsyncOpenAI(http_client=client, timeout=20)
                 response = await llm.chat.completions.create(
                     model=self.config.eastworld.llm_model,
                     messages=[{"role": "user", "content": prompt}],
@@ -301,7 +308,7 @@ class Validator(BaseValidatorNeuron):
         endpoint = f"{endpoint_url.scheme}://{endpoint_url.netloc}/sn/score"
 
         req = self.http_client.build_request("GET", endpoint)
-        r = await self.http_client.send(req, auth=self.http_auth)
+        r = await self.http_client.send(req, auth=self.gen_http_auth())
         if r.status_code != 200:
             raise Exception(
                 f"Failed to get miner scores from Eastworld. {r.status_code} {r.text}"
@@ -356,6 +363,8 @@ class Validator(BaseValidatorNeuron):
 
 # The main function parses the configuration and runs the validator.
 if __name__ == "__main__":
+    load_dotenv()
+
     with Validator() as validator:
         while True:
             bt.logging.info(f"Validator is running... {time.time()}")
