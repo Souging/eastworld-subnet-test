@@ -39,7 +39,10 @@ Before achieving this vision, the **Eastworld Subnet** will focus on building a 
 
 
 ## Quickstart for Miners
-- [Miner Guide Docs](docs/guide_for_miner.md)
+
+- [Validator Guide](docs/guide_for_validator.md)
+
+- [Miner Guide](docs/guide_for_miner.md)
 
 
 ## Application
