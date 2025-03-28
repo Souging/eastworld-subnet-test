@@ -16,7 +16,7 @@
 
 This project currently provides two demonstration miners. You can run them on the testnet to see how things work:
 
-- Random Miner: `neurons.miner.Miner` moves in a random direction based on LiDAR signal weights.
+- Wander Miner: `neurons.miner.WanderAgent` moves in a random direction based on LiDAR signal weights.
 - Junior Miner: `eastworld.miner.junior.JuniorAgent` is a basic ReAct agent that explores Eastworld. With a text/log-based memory system, it can handle resource collection and quest submission tasks.
 
 

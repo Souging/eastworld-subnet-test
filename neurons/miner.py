@@ -27,7 +27,7 @@ from eastworld.protocol import Observation
 from eastworld.miner.junior import JuniorAgent
 
 
-class Miner(BaseMinerNeuron):
+class WanderAgent(BaseMinerNeuron):
     """
     Your miner neuron class. You should use this class to define your miner's behavior. In particular, you should replace the forward function with your own logic. You may also want to override the blacklist and priority functions according to your needs.
 
@@ -37,7 +37,7 @@ class Miner(BaseMinerNeuron):
     """
 
     def __init__(self, config=None):
-        super(Miner, self).__init__(config=config)
+        super(WanderAgent, self).__init__(config=config)
 
     async def forward(self, synapse: Observation) -> Observation:
         """
@@ -53,12 +53,18 @@ class Miner(BaseMinerNeuron):
         The 'forward' function is a placeholder and should be overridden with logic that is appropriate for
         the miner's intended operation. This method demonstrates a basic transformation of input data.
         """
-        levels = {
-            "intense": 0,
-            "strong": 1,
-            "moderate": 2,
-            "weak": 3,
-        }
+        direction = self.wander(synapse)
+        distance = random.randint(5, 30)
+        synapse.action = [
+            {
+                "name": "move_in_direction",
+                "arguments": {"direction": direction, "distance": distance},
+            }
+        ]
+        return synapse
+
+    def wander(self, synapse: Observation) -> str:
+        """Wander base on LiDAR data"""
         directions = [
             "north",
             "northeast",
@@ -70,28 +76,33 @@ class Miner(BaseMinerNeuron):
             "northwest",
         ]
         weights = [1] * len(directions)
-        if synapse.sensor.lidar:
+
+        try:
             readings = {}
             for data in synapse.sensor.lidar:
-                readings[data[0]] = data[2]
+                readings[data[0]] = float(data[1].split("m")[0]) - 5.0
+
             for i, d in enumerate(directions):
-                weights[i] = levels.get(readings.get(d), 1)
+                weights[i] = readings.get(d, 0) / 50.0  # Normalize weights
+
+            # Avoid moving backwards
+            odometry_direction = synapse.sensor.odometry[0]
+            i = directions.index(odometry_direction)
+            weights[(i + 3) % len(weights)] /= 3
+            weights[(i + 4) % len(weights)] = 1e-6
+            weights[(i + 5) % len(weights)] /= 3
+        except Exception as e:
+            pass
 
         choice = random.choices(directions, weights=weights, k=1)[0]
-        synapse.action = [
-            {
-                "name": "move_in_direction",
-                "arguments": {"direction": choice, "distance": 10.0},
-            }
-        ]
-        return synapse
+        return choice
 
 
 # This is the main function, which runs the miner.
 if __name__ == "__main__":
     load_dotenv()
 
-    with JuniorAgent() as miner:
+    with WanderAgent() as miner:  # Or try the JuniorAgent
         while True:
             bt.logging.info(f"Miner is running... {time.time()}")
             time.sleep(30)
