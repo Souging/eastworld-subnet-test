@@ -3,7 +3,7 @@ name = "eastworld-subnet"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.11"
 dependencies = [
     "bittensor==9.1.0",
     "httpx[http2]>=0.28.1",
@@ -11,6 +11,14 @@ dependencies = [
     "openai>=1.64.0",
     "pydantic>=2.11.0a2",
     "python-dotenv>=1.1.0",
+]
+
+[project.optional-dependencies]
+miner = [
+    "flask>=3.1.0",
+    "gtsam>=4.2",
+    "langgraph>=0.3.25",
+    "matplotlib>=3.10.1",
 ]
 
 [tool.setuptools]

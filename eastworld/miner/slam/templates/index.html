@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SLAM Web Console - Eastworld Subnet</title>
+    <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@1.5.10/css/pico.min.css">
+    <script src="https://unpkg.com/@panzoom/panzoom@4.5.1/dist/panzoom.min.js"></script>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-hover: #3a56d4;
+            --spacing: 0.75rem;
+            --block-spacing-vertical: 1rem;
+            --block-spacing-horizontal: 1rem;
+        }
+
+        body {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 10px;
+            line-height: 1.3;
+        }
+
+        .container {
+            padding: 0 10px;
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        p {
+            margin: 0.3rem 0;
+        }
+
+        header {
+            position: relative;
+            margin-bottom: 2.5rem;
+            padding-right: 60px;
+            min-height: 60px;
+        }
+
+        header>hgroup {
+            margin-bottom: 0.5rem;
+            padding-top: 5px;
+        }
+
+        .map-container {
+            margin: 10px 0;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            height: 500px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+        }
+
+        [data-theme="dark"] .map-container {
+            background-color: #333;
+        }
+
+        .map-wrapper {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .map-img {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transform-origin: center center;
+        }
+
+        .map-controls {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            z-index: 100;
+        }
+
+        .map-control-btn {
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        .map-control-btn:hover {
+            opacity: 1;
+        }
+
+        .position-value {
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .note {
+            background-color: #fff3cd;
+            color: #856404;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+
+        .theme-switcher {
+            position: absolute;
+            top: 0;
+            right: 10px;
+            margin-bottom: 0;
+            z-index: 100;
+        }
+
+        .theme-switch-btn {
+            padding: 0.3rem 0.5rem;
+            font-size: 0.8rem;
+            min-width: auto;
+            height: auto;
+            border-radius: 4px;
+        }
+
+        .grid {
+            gap: 0.5rem;
+        }
+
+        article {
+            padding: 0.75rem;
+            margin: 0.5rem 0;
+        }
+
+        article>header {
+            margin-bottom: 0.5rem;
+        }
+
+        article>footer {
+            margin-top: 0.5rem;
+            padding-top: 0.5rem;
+        }
+
+        button {
+            padding: 0.3rem 0.6rem;
+        }
+
+        section {
+            margin: 0.75rem 0;
+        }
+
+        main.container {
+            width: 100%;
+            margin: 0 auto;
+            padding: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <main class="container">
+        <header>
+            <div class="theme-switcher">
+                <button id="theme-toggle" class="theme-switch-btn secondary outline">Theme</button>
+            </div>
+            <hgroup>
+                <h1 style="margin-bottom: 0.2rem;">SLAM Web Console - Eastworld Subnet</h1>
+            </hgroup>
+        </header>
+
+        <section class="grid">
+            <div>
+                <article>
+                    <header>
+                        <h3 style="margin: 0;">Current Map</h3>
+                    </header>
+                    <div class="map-container">
+                        <div class="map-wrapper">
+                            <img id="current-map" class="map-img" src="" alt="Current SLAM Map">
+                        </div>
+                        <div class="map-controls">
+                            <button class="map-control-btn" id="zoom-in">+</button>
+                            <button class="map-control-btn" id="zoom-out">-</button>
+                            <button class="map-control-btn" id="zoom-reset">⟲</button>
+                        </div>
+                    </div>
+                </article>
+            </div>
+
+            <div>
+                <article>
+                    <header>
+                        <h3 style="margin: 0;">Position</h3>
+                    </header>
+                    <div class="grid">
+                        <div>
+                            <label for="pos-x" style="margin: 0;">X: </label>
+                            <span id="pos-x" class="position-value">0.00</span> m
+                        </div>
+                        <div>
+                            <label for="pos-y" style="margin: 0;">Y: </label>
+                            <span id="pos-y" class="position-value">0.00</span> m
+                        </div>
+                        <div>
+                            <label for="pos-theta" style="margin: 0;">Theta: </label>
+                            <span id="pos-theta" class="position-value">0.00</span> degrees
+                        </div>
+                    </div>
+                    <footer>
+                        <button id="refresh-btn" style="padding: 0.3rem 0.6rem;">Reload</button>
+                    </footer>
+                </article>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        let currentPage = 1;
+        let perPage = 20;
+        let totalPages = 1;
+
+        document.getElementById('theme-toggle').addEventListener('click', function () {
+            const html = document.documentElement;
+            if (html.getAttribute('data-theme') === 'light') {
+                html.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                html.setAttribute('data-theme', 'light');
+                localStorage.setItem('theme', 'light');
+            }
+        });
+
+        // Load theme settings from localStorage
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        }
+
+        function fetchCurrentMap() {
+            fetch('/api/map/current')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('current-map').src = 'data:image/png;base64,' + data.image;
+
+                    document.getElementById('pos-x').textContent = data.position.x.toFixed(2);
+                    document.getElementById('pos-y').textContent = data.position.y.toFixed(2);
+                    document.getElementById('pos-theta').textContent = (data.position.theta * 180 / Math.PI).toFixed(2);
+                })
+                .catch(error => console.error('Load map failed: ', error));
+        }
+
+        fetchCurrentMap();
+
+        // Initialize global interaction events
+        document.addEventListener('DOMContentLoaded', function () {
+            const currentMap = document.getElementById('current-map');
+            const currentMapWrapper = currentMap.parentElement;
+
+            const currentMapPanzoom = Panzoom(currentMapWrapper, {
+                maxScale: 5,
+                minScale: 0.5,
+                contain: 'outside'
+            });
+
+            currentMapWrapper.addEventListener('wheel', function (event) {
+                event.preventDefault();
+                const delta = event.deltaY;
+
+                if (delta > 0) {
+                    currentMapPanzoom.zoomOut(0.2, { animate: true });
+                } else {
+                    currentMapPanzoom.zoomIn(0.2, { animate: true });
+                }
+            });
+
+            document.getElementById('zoom-in').addEventListener('click', function () {
+                currentMapPanzoom.zoomIn(0.5, { animate: true });
+            });
+
+            document.getElementById('zoom-out').addEventListener('click', function () {
+                currentMapPanzoom.zoomOut(0.5, { animate: true });
+            });
+
+            document.getElementById('zoom-reset').addEventListener('click', function () {
+                currentMapPanzoom.reset({ animate: true });
+            });
+
+            document.getElementById('refresh-btn').addEventListener('click', function () {
+                fetchCurrentMap();
+                fetchHistory(currentPage);
+            });
+        });
+    </script>
+</body>
+
+</html>

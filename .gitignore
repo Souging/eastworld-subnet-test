@@ -163,3 +163,6 @@ testing/
 
 # Editors
 .vscode/settings.json
+
+slam_data*
+memory.json

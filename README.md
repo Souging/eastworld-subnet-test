@@ -44,6 +44,8 @@ Before achieving this vision, the **Eastworld Subnet** will focus on building a 
 
 - [Miner Guide](docs/guide_for_miner.md)
 
+- [Agent Reference](docs/agent_dev.md)
+
 
 ## Application
 

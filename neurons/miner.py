@@ -25,6 +25,7 @@ import bittensor as bt
 from eastworld.base.miner import BaseMinerNeuron
 from eastworld.protocol import Observation
 from eastworld.miner.junior import JuniorAgent
+from eastworld.miner.senior import SeniorAgent
 
 
 class WanderAgent(BaseMinerNeuron):
@@ -83,7 +84,7 @@ class WanderAgent(BaseMinerNeuron):
                 readings[data[0]] = float(data[1].split("m")[0]) - 5.0
 
             for i, d in enumerate(directions):
-                weights[i] = readings.get(d, 0) / 50.0  # Normalize weights
+                weights[i] = readings.get(d, 50.0) / 50.0  # Normalize weights
 
             # Avoid moving backwards
             odometry_direction = synapse.sensor.odometry[0]
@@ -102,7 +103,7 @@ class WanderAgent(BaseMinerNeuron):
 if __name__ == "__main__":
     load_dotenv()
 
-    with WanderAgent() as miner:  # Or try the JuniorAgent
+    with JuniorAgent() as miner:  # Or try the SeniorAgent(slam_data="slam_data")
         while True:
             bt.logging.info(f"Miner is running... {time.time()}")
             time.sleep(30)

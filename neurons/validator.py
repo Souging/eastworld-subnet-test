@@ -69,7 +69,7 @@ class Validator(BaseValidatorNeuron):
 
             if res.code == 429:
                 bt.logging.info("The next turn is not available yet. Wait for 10s.")
-                await asyncio.sleep(10)
+                await asyncio.sleep(5)
                 return
             elif res.code != 200:
                 bt.logging.error(
@@ -206,7 +206,7 @@ class Validator(BaseValidatorNeuron):
         req = self.http_client.build_request("POST", endpoint, json=data)
 
         r = await self.http_client.send(req, auth=self.gen_http_auth())
-        if r.status_code != 200:
+        if r.status_code > 499:
             raise Exception(
                 f"Failed to submit action to Eastworld server. {r.status_code} {r.text}"
             )

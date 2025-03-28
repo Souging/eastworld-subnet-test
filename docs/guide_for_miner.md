@@ -95,7 +95,7 @@ The story takes place in an unknown future. The Miner, an intelligent robot (Age
 
 ## Compass Directions
 
-Eastworld uses 8 directions to describe position relastions:
+Eastworld uses 8 directions to describe position relations:
 
   - north (Cardinal directions)
   - east

@@ -1,0 +1,33 @@
+[
+    {
+        "type": "function",
+        "function": {
+            "name": "explore_wall_following",
+            "description": "Explore with the wall following strategy. The wall following strategy is a heuristic strategy based on the geometric characteristics of the environment. The core idea is to gradually explore the path by always moving along the right wall.",
+            "parameters": {
+                "type": "object",
+                "properties": {},
+                "required": []
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "navigate_to",
+            "description": "Move to a specific location following navigation system's guidelines. The location must be a known spot previously marked in the map.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "target": {
+                        "type": "string",
+                        "description": "The target location to navigate to. This must be a valid known location in the navigation system."
+                    }
+                },
+                "required": [
+                    "target"
+                ]
+            }
+        }
+    }
+]
