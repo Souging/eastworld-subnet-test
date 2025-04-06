@@ -3,7 +3,7 @@
 # **Eastworld** <!-- omit in toc -->
 Next-Generation Gyms for Next-Generation AI Agents, on Bittensor (Testnet SN288)
 
-[Discord(Bittensor)](https://discord.gg/QbkDMwpGzG) • [Livestream](https://eastworld.ai/live/) • [X](https://x.com/Eastworld_AI)
+[Discord(Bittensor)](https://discord.gg/QbkDMwpGzG) • [Livestream](https://eastworld.ai/live/bittensor/) • [X](https://x.com/Eastworld_AI)
 
 </div>
 
@@ -38,7 +38,7 @@ Before achieving this vision, the **Eastworld Subnet** will focus on building a 
 - **Incentivized**: Introduces an economic incentive mechanism powered by the Bittensor blockchain to reward algorithm optimization and performance breakthroughs, injecting continuous innovation into AI research.
 
 
-## Quickstart for Miners
+## Quickstart
 
 - [Validator Guide](docs/guide_for_validator.md)
 
