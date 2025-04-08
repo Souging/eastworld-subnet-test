@@ -75,5 +75,21 @@ Before achieving this vision, the **Eastworld Subnet** will focus on building a 
 - [ ] Incorporate vision data into the synapse for more realistic spatial perception.
 - [ ] Expand map designs to include real-world scenarios such as disaster relief, deep space exploration, and more.
 
+---
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) 
+## Public Data Usage Notice
+
+During your participation in this project, the content you submit (e.g., model inputs, outputs, text interactions, feedback, etc.), as long as it does not include any personally sensitive information, may be collected, anonymized, and used for the following purposes:
+
+- Creating and releasing open datasets for research, education, or model training
+- Public sharing on platforms such as Hugging Face, GitHub, etc.
+- Analyzing model performance and improving algorithm quality
+
+By submitting your data, you grant the project team a non-exclusive, free, and lawful license to use, modify, and publicly release your submitted content.  
+If you wish to withdraw your data, please contact us via the methods listed on the project page, and we will do our best to accommodate your request.
+
+**Please do not submit any private, sensitive, or unauthorized content.**
+
+---
+
+[![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)  [![License: CC BY](https://img.shields.io/badge/license-CC%20BY%204.0-green?style=for-the-badge)](https://creativecommons.org/licenses/by/4.0/) 
