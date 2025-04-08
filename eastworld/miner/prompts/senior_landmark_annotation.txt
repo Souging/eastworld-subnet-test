@@ -38,9 +38,10 @@ If a marker is needed, generate a concise and unique name using the format:
 - Do not include relative directions or coordinates in the name.
 
 ### Output Format:
-- If a marker **should** be added, return only the marker name (e.g. `Tower_03`)
+- If a marker **should** be added, return two lines. The first line is the marker name (e.g. `Tower_03`) and the second line it the marker description
 - If no marker is needed, return the string: `NA`
-- Do **not** provide any explanation or additional text. Only return the final result.
+- The marker description should be short and concise but represents the featrues of the location
+- Do **not** provide any explanation or additional text. Only return the final result
 
 ### Begin Input:
 - Current coordinates: (X: {x}, Y: {y})

@@ -49,7 +49,7 @@ class ISAM2:
         self,
         load_data: bool = False,
         data_dir: str = "slam_data",
-        save_interval: int = 10,
+        save_interval: int = 5,
     ):
         # Create data save directory
         self.data_dir = data_dir
@@ -367,7 +367,12 @@ class ISAM2:
     def _reanchor_grid_map_nodes(self):
         """Reanchor grid map nodes to the latest isam estimate"""
         result = self.isam.calculateEstimate()
-        for node_id, (node_pid, node_x, node_y) in self.grid_map.nav_nodes.items():
+        for node_id, (
+            node_pid,
+            node_x,
+            node_y,
+            node_desc,
+        ) in self.grid_map.nav_nodes.items():
             node_key = symbol("x", node_pid)
             if result.exists(node_key):
                 pose = result.atPose2(node_key)
@@ -375,6 +380,7 @@ class ISAM2:
                     node_pid,
                     pose.x(),
                     pose.y(),
+                    node_desc,
                 )
 
     def _update_grid_map(self, pose: gtsam.Pose2, lidar_data: dict[str, float]):

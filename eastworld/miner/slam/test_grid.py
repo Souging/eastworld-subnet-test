@@ -613,13 +613,13 @@ class TestOccupancyGridMap(unittest.TestCase):
         # Create a simple navigation graph
         # Add nodes
         self.grid_map.nav_nodes = {
-            "node_0": (0, 0, 0),  # (pose_index, x, y)
-            "node_1": (1, 50, 0),  # right
-            "node_2": (2, 0, 50),  # down
-            "node_3": (3, 50, 50),  # right-down
-            "node_4": (4, 100, 100),  # further away
-            "node_5": (5, 150, 50),  # further right
-            "node_6": (6, 100, 0),  # right of node_1
+            "node_0": (0, 0, 0, "node_0"),  # (pose_index, x, y)
+            "node_1": (1, 50, 0, "node_1"),  # right
+            "node_2": (2, 0, 50, "node_2"),  # down
+            "node_3": (3, 50, 50, "node_3"),  # right-down
+            "node_4": (4, 100, 100, "node_4"),  # further away
+            "node_5": (5, 150, 50, "node_5"),  # further right
+            "node_6": (6, 100, 0, "node_6"),  # right of node_1
         }
 
         # Create a more complex topology with different edge costs
@@ -699,7 +699,7 @@ class TestOccupancyGridMap(unittest.TestCase):
 
         # Test 6: Test with disconnected nodes
         # Create an isolated node
-        self.grid_map.nav_nodes["isolated_node"] = (7, 200, 200)
+        self.grid_map.nav_nodes["isolated_node"] = (7, 200, 200, "isolated_node")
 
         # Try to navigate to the isolated node
         path = self.grid_map.node_navigation("node_0", "isolated_node")
@@ -753,7 +753,7 @@ class TestOccupancyGridMap(unittest.TestCase):
 
         # Create a mapping from coordinates to node IDs for easy lookup
         coord_to_node = {}
-        for node_id, (_, x, y) in self.grid_map.nav_nodes.items():
+        for node_id, (_, x, y, _) in self.grid_map.nav_nodes.items():
             coord_to_node[(x, y)] = node_id
 
         # Extract nodes from the path

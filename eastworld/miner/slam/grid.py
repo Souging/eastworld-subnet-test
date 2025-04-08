@@ -204,6 +204,7 @@ class OccupancyGridMap:
         x: float,
         y: float,
         node_id: str = None,
+        node_desc: str = None,
         allow_isolated: bool = False,
     ):
         # Find nodes within a certain euclidean distance from the given point
@@ -211,7 +212,7 @@ class OccupancyGridMap:
         node_candidates = []
 
         # Find nodes within euclidean distance threshold
-        for nid, (_, nx, ny) in self.nav_nodes.items():
+        for nid, (_, nx, ny, _) in self.nav_nodes.items():
             # Directly use world coordinates to calculate Euclidean distance
             e_dist = ((x - nx) ** 2 + (y - ny) ** 2) ** 0.5
             if e_dist < e_dist_threshold:
@@ -243,18 +244,18 @@ class OccupancyGridMap:
         # If node_id is specified, create a new node anyway
         if node_id is not None:
             if nearest_node is not None:
-                self.nav_nodes[node_id] = (pose_index, x, y)
+                self.nav_nodes[node_id] = (pose_index, x, y, node_desc)
                 self._add_nav_edge(node_id, nearest_node, nearest_step)
                 bt.logging.debug(
                     f"Added navigation node {node_id} with edge to {nearest_node}"
                 )
             elif allow_isolated:
-                self.nav_nodes[node_id] = (pose_index, x, y)
+                self.nav_nodes[node_id] = (pose_index, x, y, node_desc)
                 bt.logging.debug(f"Added isolated navigation node {node_id}")
         # If no candidates, add an isolated node
         elif not node_candidates and allow_isolated:
             node_id = f"{ANONYMOUS_NODE_PREFIX}{len(self.nav_nodes)}_{pose_index}"
-            self.nav_nodes[node_id] = (pose_index, x, y)
+            self.nav_nodes[node_id] = (pose_index, x, y, node_desc)
             bt.logging.debug(
                 f"Added isolated navigation node {node_id} (no nearby nodes)"
             )
@@ -262,7 +263,7 @@ class OccupancyGridMap:
         # Else if nearest step is greater than threshold, add a new node
         elif nearest_node is not None and nearest_step > path_step_threshold:
             node_id = f"{ANONYMOUS_NODE_PREFIX}{len(self.nav_nodes)}_{pose_index}"
-            self.nav_nodes[node_id] = (pose_index, x, y)
+            self.nav_nodes[node_id] = (pose_index, x, y, node_desc)
             self._add_nav_edge(node_id, nearest_node, nearest_step)
             bt.logging.debug(
                 f"Added anonymous navigation node {node_id} with edge to {nearest_node}"
@@ -831,7 +832,7 @@ class OccupancyGridMap:
 
         # If start and end nodes are the same, directly return the node coordinates
         if node_start == node_end:
-            return [self.nav_nodes[node_start][1:]]
+            return [self.nav_nodes[node_start][1:3]]
 
         # Initialize open list and closed list
         open_set = []
@@ -844,8 +845,8 @@ class OccupancyGridMap:
 
         def heuristic_nav(node1, node2):
             # using Euclidean distance between nodes
-            pid1, x1, y1 = self.nav_nodes[node1]
-            pid2, x2, y2 = self.nav_nodes[node2]
+            pid1, x1, y1, _ = self.nav_nodes[node1]
+            pid2, x2, y2, _ = self.nav_nodes[node2]
             return ((x1 - x2) ** 2 + (y1 - y2) ** 2) ** 0.5
 
         def heuristic_cost(node1, node2):
@@ -877,7 +878,7 @@ class OccupancyGridMap:
                 path_nodes.append(node_start)
                 path_nodes.reverse()
 
-                return [self.nav_nodes[node][1:] for node in path_nodes]
+                return [self.nav_nodes[node][1:3] for node in path_nodes]
 
             # Check all neighbors of current node
             for neighbor in self.nav_edges[current_node]:
@@ -941,7 +942,7 @@ class OccupancyGridMap:
         nearest_node = None
         min_distance = float("inf")
 
-        for node_id, (_, node_x, node_y) in self.nav_nodes.items():
+        for node_id, (_, node_x, node_y, _) in self.nav_nodes.items():
             distance = ((node_x - x) ** 2 + (node_y - y) ** 2) ** 0.5
             if distance < min_distance:
                 min_distance = distance
@@ -956,7 +957,7 @@ class OccupancyGridMap:
             return list(self.nav_nodes.keys())
 
         nodes_in_radius = []
-        for node_id, (_, node_x, node_y) in self.nav_nodes.items():
+        for node_id, (_, node_x, node_y, node_desc) in self.nav_nodes.items():
             distance = ((node_x - x) ** 2 + (node_y - y) ** 2) ** 0.5
             if distance <= range:
                 nodes_in_radius.append(node_id)

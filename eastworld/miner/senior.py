@@ -278,10 +278,9 @@ class SeniorAgent(BaseMinerNeuron):
                     bt.logging.error(f"SLAM Error: {e}")
                     traceback.print_exc()
 
-            nav_nodes_all = self.slam.grid_map.nav_nodes.keys()
             nav_nodes_labeled_all = [
-                node_id
-                for node_id in nav_nodes_all
+                f"{node_id} : {node_data[3]}"
+                for node_id, node_data in self.slam.grid_map.nav_nodes.items()
                 if not node_id.startswith(ANONYMOUS_NODE_PREFIX)
             ]
             state["navigation_locations"] = nav_nodes_labeled_all
@@ -334,19 +333,23 @@ class SeniorAgent(BaseMinerNeuron):
                 "objects": synapse.perception.objects,
             }
             prompt = self.landmark_annotation_prompt.format(**prompt_context)
-            # bt.logging.debug(f"Landmark Annotation Prompt: {prompt}")
+            bt.logging.debug(f"Landmark Annotation Prompt: {prompt}")
             response = await self.llm.chat.completions.create(
                 model=self.model_small,
                 messages=[{"role": "user", "content": prompt}],
             )
-            # bt.logging.debug(f"Landmark Annotation Response: {response}")
+            bt.logging.debug(f"Landmark Annotation Response: {response}")
 
-            if response.choices[0].message.content.strip() != "NA":
+            node_data = response.choices[0].message.content.splitlines()
+            node_id = node_data[0].strip()
+            node_desc = node_data[1].strip() if len(node_data) > 1 else ""
+            if node_id != "NA":
                 self.slam.grid_map.update_nav_topo(
                     self.slam.pose_index,
                     x,
                     y,
-                    node_id=response.choices[0].message.content.strip(),
+                    node_id=node_id,
+                    node_desc=node_desc,
                     allow_isolated=True,
                 )
         except Exception as e:
@@ -481,15 +484,6 @@ class SeniorAgent(BaseMinerNeuron):
         try:
             synapse: Observation = state["observation"]
 
-            recent_action_log = ""
-            for idx, l in enumerate(self.memory.memory["logs"][-5:]):
-                repeat_str = (
-                    f" (repeated {l['repeat_times']} times)"
-                    if l["repeat_times"] > 1
-                    else ""
-                )
-                recent_action_log += f"\n  - Log {idx + 1}\n    Action: {l['action']} {repeat_str}\n    Result: {l['feedback']}"
-
             prompt_context = {
                 "goals": "\n".join([f"  - {x}" for x in self.memory.memory["goals"]]),
                 "plans": "\n".join([f"  - {x}" for x in self.memory.memory["plans"]]),
@@ -507,7 +501,6 @@ class SeniorAgent(BaseMinerNeuron):
                 "navigation_locations": "\n".join(
                     [f"  - {x}" for x in state["navigation_locations"]]
                 ),
-                "recent_action_log": recent_action_log,
             }
             prompt = self.action_selection_prompt.format(**prompt_context)
             bt.logging.debug(f"Action Selection Prompt: {prompt}")
@@ -670,7 +663,7 @@ class SeniorAgent(BaseMinerNeuron):
         # Calculate the relative direction from origin to target
         dx = target_x - origin_x
         dy = target_y - origin_y
-        angle = (180 + (180 / 3.14) * bt.atan2(dy, dx)) % 360
+        angle = (180 + (180 / 3.14) * math.atan2(dy, dx)) % 360
         angle = (angle + 22.5) % 360
         index = int(angle / 45)
         return self.directions[index]

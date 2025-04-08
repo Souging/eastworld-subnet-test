@@ -8,7 +8,6 @@ You will receive the following input:
 - **Environment Perception**: Interpreted scene information (e.g. landmarks, terrain types, nearby entities or objects).
 - **Items in Inventory**: Tools, equipment, or usable items available to you right now.
 - **Navigation Points**: Locations you have marked in the naviation system.
-- **Recent Action Log**: Recent steps taken and their associated tools or functions.
 
 The function list and definitions are provided separately via the SDK. You do not need to define or describe them.
 
@@ -50,6 +49,3 @@ The function list and definitions are provided separately via the SDK. You do no
 
 - **Navigation Points**
 {navigation_locations}
-
-- **Recent Action Log**:
-{recent_action_log}
