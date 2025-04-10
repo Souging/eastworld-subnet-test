@@ -72,74 +72,37 @@ Ensure the external endpoint is accessible by the validators and that there are 
 
 #### 5. Next
 
-Join our Discord channel to share your thoughts with us and other miners. And DON'T FORGET there's a 24-hour LIVE stream for Eastworld! You can watch your miner in action in the Eastworld environment. The default stream cycles through all miners, but we can help configure the livestream to stay focused on your miner for debugging.(The mainnet stream will always cycle to prevent cheating).
+Join our Discord channel to share your thoughts with us and other miners. And DON'T FORGET there's a 24x7 LIVE stream for Eastworld Subnet! You can watch your miner in action in the Eastworld environment. The default stream cycles through all miners, but we can help configure the livestream to stay focused on your miner for debugging. (The mainnet stream will always cycle to prevent cheating).
 
 
+## Miner Development
 
-# Surviving in Eastworld (Miner Development)
-
-Check the `protocol.Observation` synapse definition. The validator will send the following data to miners:
-
-* `stats`: Data such as Agent integrity, energy level, etc. (Not yet implemented).
-* `items`: The items in Agent's inventory.
-* `sensor`: LiDAR and Odometry data indicating distance and space. This will be explained further in the next section.
-* `perception`: A text description of the surrounding environment, including terrain, characters, and objects.
-* `action_log`: The result of the last action executed, which will be provided in the next new observation (synapse).
-* `action_space`: A list of available actions in the standard LLM function call definition format.
-
-The miner’s primary task is to process all this information and respond with a valid function call.
-
-
-## The Story
-
-The story takes place in an unknown future. The Miner, an intelligent robot (Agent #UID), serves aboard a spaceship. During a flight, the spaceship crashes into a canyon. Now, the Agent must assist the crew in surviving the harsh conditions.
-
-
-## Compass Directions
-
-Eastworld uses 8 directions to describe position relations:
-
-  - north (Cardinal directions)
-  - east
-  - south
-  - west
-  - northeast (Ordinal directions)
-  - southeast
-  - southwest
-  - northwest
-
-
-## LiDAR Scanner Data Interpretation:
-
-The LiDAR data indicates whether a direction is passable:
-
-  - intense: Indicates a strong reflection signal, meaning the direct path is completely blocked.  
-  - strong: Indicates a relatively strong reflection signal, suggesting there is an obstacle nearby, but forward movement may still be possible.  
-  - moderate: Indicates a moderate signal strength, implying no obstacles in the mid-to-short range, and passage is possible.  
-  - weak: Indicates a weak reflection signal, meaning the path ahead is clear of obstacles.  
-
-
-## Available Actions
-
-Here are the basic actions for miners so far. You should not hardcode them in the prompt, as the `action_space` already includes all of these descriptions.
-
-  - move_in_direction: Moves in the specified direction.
-  - move_to_target: Move towards the specified target entity. Target can be a character or a location and must be in sight.
-  - talk_to: Talk to other entity. Accepts the name of the target and the content you want to say. The target may not hear you if you're too far away.
-  - inspect: Examine a specified target to obtain detailed information, such as character status, item identification, or device operation instructions.
-  - collect: Collect resources or items from the specified target entity.
-  - discard_item: Discard items from the inventory.
-
-
-## Quest System
-
-As you can see in the action list, there is no `quest_xxx` function. All quest-related operations are handled through TALK, similar to real-life interactions.
+Check the [Agent Reference](docs/agent_dev.md).
 
 
 ## Score and Incentives
 
-The scoring system is still undergoing adjustments and improvements. The basic idea is that the overall score consists of:
+The scoring framework is currently being refined through iterative optimization. The weighted scoring model comprises two primary components:
 
-* Action Score: Small, easy-to-earn scores that reward miners for VALID actions.
-* Quest Score: A larger score, but one that requires a series of planned actions to reward good higher-level design.
+* Action Score (Micro-rewards): Granted for individual VALID actions. Designed as frequent, low-value incentives.
 
+* Quest Score (Macro-rewards): Awarded for completing action sequences, and reflects strategic planning quality. Delivers higher-value compensation.
+
+
+### Score Formula
+
+$\text{Weighted Score} = 0.4 \times \text{Action Score} + 0.6 \times \text{Quest Score}$
+
+
+### Score Decay
+
+* Action Score: Fixed-point hourly deduction
+
+* Quest Score: Exponential hourly decay
+
+
+### Simulation
+
+In our simulation, the general new miner requires ≈40 operational hours to reach mean score level. And it takes 24-hour to restore after a 2-hour outage.
+
+![Score Simulate](score.png)

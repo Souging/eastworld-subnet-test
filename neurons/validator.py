@@ -68,14 +68,14 @@ class Validator(BaseValidatorNeuron):
             res = await self.get_observation()
 
             if res.code == 429:
-                bt.logging.info("The next turn is not available yet. Wait for 10s.")
-                await asyncio.sleep(5)
+                bt.logging.info("The next turn is not available yet. Wait for 15s.")
+                await asyncio.sleep(15)
                 return
             elif res.code != 200:
                 bt.logging.error(
                     f"Failed to get observation from Eastworld. {res.code} {res.message}"
                 )
-                await asyncio.sleep(10)
+                await asyncio.sleep(30)
                 return
 
             # Validate the UID and hotkey from the API.
