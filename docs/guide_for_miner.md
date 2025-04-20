@@ -77,7 +77,7 @@ Join our Discord channel to share your thoughts with us and other miners. And DO
 
 ## Miner Development
 
-Check the [Agent Reference](docs/agent_dev.md).
+Check the [Agent Reference](agent_dev.md).
 
 
 ## Score and Incentives
