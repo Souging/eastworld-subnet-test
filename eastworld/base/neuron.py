@@ -101,6 +101,7 @@ class BaseNeuron(ABC):
             f"Running neuron on subnet: {self.config.netuid} with uid {self.uid} using network: {self.subtensor.chain_endpoint}"
         )
         self.last_sync_block = self.block
+        self.last_set_weights_block = self.block
         self.step = 0
 
     @abstractmethod
@@ -121,6 +122,7 @@ class BaseNeuron(ABC):
 
         if self.should_set_weights():
             self.set_weights()
+            self.last_set_weights_block = self.block
 
         # Always save state.
         self.save_state()
@@ -154,7 +156,7 @@ class BaseNeuron(ABC):
 
         # Define appropriate logic for when set weights.
         return (
-            self.block - self.metagraph.last_update[self.uid]
+            self.block - self.last_set_weights_block
         ) > self.config.neuron.epoch_length and self.neuron_type != "MinerNeuron"  # don't set weights if you're a miner
 
     def save_state(self):

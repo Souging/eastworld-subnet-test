@@ -52,6 +52,7 @@ class Validator(BaseValidatorNeuron):
 
         self.http_client = httpx.AsyncClient()
         self.inactive_miners = {}
+        self.last_update_score_step = 0
 
     async def forward(self):
         """
@@ -97,7 +98,7 @@ class Validator(BaseValidatorNeuron):
                 return
 
             # Skip the miner for a certain period if it is inactive.
-            if self.config.subtensor.network == "test":
+            if self.config.subtensor.network in ("test", "local"):
                 notuntil, interval = self.inactive_miners.get(res.uid, (0, 0))
                 if notuntil and notuntil > time.time():
                     bt.logging.info(f"Skip for inactive miner #{res.uid}.")
@@ -123,7 +124,7 @@ class Validator(BaseValidatorNeuron):
 
             synapse: bt.Synapse = responses[0]
             # Add skip time for inactive miners.
-            if self.config.subtensor.network == "test":
+            if self.config.subtensor.network in ("test", "local"):
                 if synapse.is_failure or not len(synapse.action):
                     notuntil, interval = self.inactive_miners.get(
                         res.uid, (time.time(), 60)
@@ -301,8 +302,10 @@ class Validator(BaseValidatorNeuron):
     async def update_scores(self):
         """Fetch latest miners' scores from Eastworld server"""
         # Update scores every 30 steps.
-        if self.step % 30 != 0:
+        if self.step - self.last_update_score_step < 30:
             return
+        # `step` is numpy.ndarray. Make sure to convert to int.
+        self.last_update_score_step = int(self.step)
 
         endpoint_url = urlparse(self.config.eastworld.endpoint_url)
         endpoint = f"{endpoint_url.scheme}://{endpoint_url.netloc}/sn/score"
@@ -353,7 +356,6 @@ class Validator(BaseValidatorNeuron):
         # shape: [ metagraph.n ]
         scattered_scores: np.ndarray = np.zeros_like(self.scores)
         scattered_scores[uids_array] = new_scores
-        bt.logging.debug(f"Scattered scores: {scattered_scores}")
 
         # Update local scores.
         # shape: [ metagraph.n ]
