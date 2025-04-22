@@ -44,6 +44,9 @@ The function list and definitions are provided separately via the SDK. You do no
 - **Environment Perception**:
 {perception}
 
+- **Environment Interaction**:
+{interaction}
+
 - **Items in Inventory**:
 {items}
 

@@ -8,6 +8,7 @@ You are **not required** to decide the next action. Instead, your output should 
 - **Obstacle Sensor Readings**: Local obstacle data (e.g. LiDAR).
 - **Odometry Reading**: Movement history and orientation updates.
 - **Environment Perception**: Semantic and spatial understanding of surroundings.
+- **Environment Interaction**: Interaction with the surrounding environment.
 - **Items in Inventory**: Available tools or resources.
 - **Navigation Points**: Locations you have marked in the naviation system.
 - **Recent Reflections** (optional): Internal evaluations from earlier steps.
@@ -58,6 +59,9 @@ You are **not required** to decide the next action. Instead, your output should 
 
 - **Environment Perception**:
 {perception}
+
+- **Environment Interaction**:
+{interaction}
 
 - **Items in Inventory**:
 {items}

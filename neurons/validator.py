@@ -52,7 +52,7 @@ class Validator(BaseValidatorNeuron):
 
         self.http_client = httpx.AsyncClient()
         self.inactive_miners = {}
-        self.last_update_score_step = 0
+        self.last_update_scores_step = 0
 
     async def forward(self):
         """
@@ -223,7 +223,9 @@ class Validator(BaseValidatorNeuron):
     async def create_synapse(self, context: EWContext) -> Observation:
         ob = context.observation
         sensor = Sensor(lidar=ob.lidar, odometry=ob.odometry)
-        perception = Perception(environment="", objects="")
+        perception = Perception(
+            environment="", objects="", interactions=context.interaction
+        )
 
         # Summarize perception with LLM
         environment_prompt = ""
@@ -302,10 +304,10 @@ class Validator(BaseValidatorNeuron):
     async def update_scores(self):
         """Fetch latest miners' scores from Eastworld server"""
         # Update scores every 30 steps.
-        if self.step - self.last_update_score_step < 30:
+        if self.step - self.last_update_scores_step < 30:
             return
         # `step` is numpy.ndarray. Make sure to convert to int.
-        self.last_update_score_step = int(self.step)
+        self.last_update_scores_step = int(self.step)
 
         endpoint_url = urlparse(self.config.eastworld.endpoint_url)
         endpoint = f"{endpoint_url.scheme}://{endpoint_url.netloc}/sn/score"
@@ -353,6 +355,9 @@ class Validator(BaseValidatorNeuron):
 
         # Compute forward pass rewards, assumes uids are mutually exclusive.
         # If things work as expected, scores from Eastworld API should be same size as metagraph.
+        # Exception case:
+        #   The server synchronizes the network before the validator and increases the UIDs (metagraph.n). The
+        #   code will raise an IndexError error. It won't happen if UID number reaches 256.
         # shape: [ metagraph.n ]
         scattered_scores: np.ndarray = np.zeros_like(self.scores)
         scattered_scores[uids_array] = new_scores

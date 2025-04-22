@@ -396,6 +396,9 @@ class SeniorAgent(BaseMinerNeuron):
                 ),
                 "odometry_reading": f"  - {', '.join(synapse.sensor.odometry)}",
                 "perception": f"{synapse.perception.environment}\n{synapse.perception.objects}",
+                "interaction": "\n".join(
+                    [f"  - {', '.join(x)}" for x in synapse.perception.interactions]
+                ),
                 "items": "\n".join(
                     [
                         f"  - {item.name} x{item.count}: {item.description.strip()}"
@@ -492,6 +495,9 @@ class SeniorAgent(BaseMinerNeuron):
                     [f"  - {', '.join(items)}" for items in synapse.sensor.lidar]
                 ),
                 "perception": f"{synapse.perception.environment}\n{synapse.perception.objects}",
+                "interaction": "\n".join(
+                    [f"  - {', '.join(x)}" for x in synapse.perception.interactions]
+                ),
                 "items": "\n".join(
                     [
                         f"  - {item.name} x{item.count}: {item.description.strip()}"

@@ -11,7 +11,7 @@ Check the `protocol.Observation` synapse definition. The validator will send the
 * `stats`: Data such as Agent integrity, energy level, etc. (Not yet implemented).
 * `items`: The items and item amount, description in Agent's inventory.
 * `sensor`: LiDAR and Odometry data indicating distance and space. This will be explained further in the next section.
-* `perception`: Text descriptions of the surrounding environment, including terrain, characters, and objects.
+* `perception`: Text descriptions of the surrounding environment, including terrain, characters, and objects. And a list of environmental interactions, such as passive dialogue, damage, etc.
 * `action_log`: The result of the last action executed.
 * `action_space`: A list of available actions in the OpenAI function call definition format.
 

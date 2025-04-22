@@ -37,10 +37,12 @@ class Sensor(pydantic.BaseModel):
 
 
 class Perception(pydantic.BaseModel):
-    # Perception of the Environment Perception Layer
+    # Environment Perception Layer
     environment: str
-    # Perception of the Object Detection and Classification Layer
+    # Object Detection and Classification Layer
     objects: str
+    # Interaction Perception Layer
+    interactions: list[tuple[str, ...]]
 
 
 class Observation(bt.Synapse):
