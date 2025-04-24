@@ -90,12 +90,32 @@ uv sync --extra miner
 uv pip install -e .
 ```
 
+If you have encounterd "Segmentation fault" running miner, please build GTSAM from source (develop branch)
+
+```
+git clone https://github.com/borglab/gtsam.git
+
+# After install the gtsam requirements (boost, cmake, etc)
+
+cd gtsam/python
+uv pip install -r dev_requirements.txt
+cmake .. -DGTSAM_BUILD_PYTHON=1 -DGTSAM_PYTHON_VERSION= **YOUR PYTHON VERSION**
+make
+
+cd python && uv pip install .
+# Or `make python-install` if you're using pip only
+
+```
+
+GTSAM official install reference: https://github.com/borglab/gtsam/tree/develop/python
+
+
 #### SLAM
 
 Two algorithm approaches are provided to demonstrate SLAM integration with sensor data in the Synapse:
 
 * FastSLAM
-* ISAM
+* ISAM (default)
 
 And a simple web page to visualize the SLAM status:
 

@@ -103,7 +103,7 @@ class WanderAgent(BaseMinerNeuron):
 if __name__ == "__main__":
     load_dotenv()
 
-    with JuniorAgent() as miner:  # Or try the SeniorAgent(slam_data="slam_data")
+    with JuniorAgent() as miner:  # Or try the SeniorAgent(slam_data=None)
         while True:
             bt.logging.info(f"Miner is running... {time.time()}")
             time.sleep(30)
