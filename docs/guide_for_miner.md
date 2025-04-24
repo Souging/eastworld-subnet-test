@@ -75,6 +75,30 @@ Ensure the external endpoint is accessible by the validators and that there are 
 Join our Discord channel to share your thoughts with us and other miners. And DON'T FORGET there's a 24x7 LIVE stream for Eastworld Subnet! You can watch your miner in action in the Eastworld environment. The default stream cycles through all miners, but we can help configure the livestream to stay focused on your miner for debugging. (The mainnet stream will always cycle to prevent cheating).
 
 
+## Running on Mainnet
+
+To run a miner on mainnet, the procedure is basically the same. First register on SN94:
+
+```
+btcli subnets register --netuid 94
+```
+
+After the installation, you can run the miner with PM2:
+
+```
+# Install NodeJS if it's not already installed
+curl -fsSL https://fnm.vercel.app/install | bash
+fnm use --install-if-missing 22
+
+# Install PM2
+npm install -g pm2
+
+# Start the miner
+pm2 start python -- neurons/miner.py --netuid 94 *The remaining parameters*
+
+```
+
+
 ## Miner Development
 
 Check the [Agent Reference](agent_dev.md).

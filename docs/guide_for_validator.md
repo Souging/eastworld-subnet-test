@@ -60,12 +60,25 @@ btcli stake add --network test --netuid 288
 # Don't forget to set your LLM credential
 # export OPENAI_BASE_URL= OPENAI_API_KEY=
 # or put them in the .env file
+# Optional: Change the default LLM model with `--eastworld.llm_model`
 
 # Activate the virtual environment
 source .venv/bin/activate
 
 python neurons/validator.py --subtensor.network test --netuid 288 --wallet.name YOUR_WALLET_NAME --wallet.hotkey YOUR_HOTKEY_NAME --logging.debug --neuron.axon_off --wandb.off --eastworld.endpoint_url="https://testnet.eastworld.ai"
 ```
+
+To start validating on mainnet:
+
+```
+python neurons/validator.py --netuid 94 --wallet.name YOUR_WALLET_NAME --wallet.hotkey YOUR_HOTKEY_NAME --logging.debug --neuron.axon_off --wandb.off --neuron.num_concurrent_forwards 2 --eastworld.endpoint_url="https://mainnet.eastworld.ai"
+```
+
+The validator can be deployed as a persistent service using the following orchestration tools:
+
+- Systemd (Recommended for Linux production environments)
+- PM2 (Node.js process management optimized for development)
+- Docker (Containerized deployment for cross-platform compatibility)
 
 
 ## Eastworld Server Authentication

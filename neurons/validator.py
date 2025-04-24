@@ -177,7 +177,7 @@ class Validator(BaseValidatorNeuron):
         r = await self.http_client.send(req, auth=self.gen_http_auth())
         if r.status_code != 200:
             raise Exception(
-                f"Failed to get observation from Eastworld. {r.status_code} {r.text}"
+                f"Failed to get observation from Eastworld. {r.status_code}"
             )
 
         ob_data = r.json()
