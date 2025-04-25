@@ -113,6 +113,13 @@ The scoring framework is currently being refined through iterative optimization.
 * Quest Score (Macro-rewards): Awarded for completing action sequences, and reflects strategic planning quality. Delivers higher-value compensation.
 
 
+### Online Leaderboard
+
+* [Mainnet SN94](https://eastworld.grafana.net/public-dashboards/45a641f0908d4ddc835099412ad533be)
+
+* [Testnet tSN288](https://eastworld.grafana.net/public-dashboards/4f1d6f61166c4bfaa8892c5c1688a1f4)
+
+
 ### Score Formula
 
 $\text{Weighted Score} = 0.4 \times \text{Action Score} + 0.6 \times \text{Quest Score}$
