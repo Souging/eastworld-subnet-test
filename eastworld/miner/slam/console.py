@@ -40,7 +40,7 @@ def visualize_gridmap(map: OccupancyGridMap, x, y: int):
     ax.imshow(prob_map, cmap="Greys", origin="lower")
 
     # Navigation topological
-    for node_id, (_, node_x, node_y) in map.nav_nodes.items():
+    for node_id, (_, node_x, node_y, node_desc) in map.nav_nodes.items():
         grid_x, grid_y = map.world_to_grid(node_x, node_y)
         if node_id.startswith(ANONYMOUS_NODE_PREFIX):
             ax.scatter(grid_x, grid_y, color="blue", s=100, marker="^", alpha=0.5)
