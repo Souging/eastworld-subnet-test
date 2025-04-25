@@ -32,7 +32,7 @@ cd eastworld-subnet
 
 # Recommanded: Use uv to manage packages
 uv venv .venv
-uv sync --prerelease=allow
+uv sync --inexact
 uv pip install -e .
 
 # Or use pip
