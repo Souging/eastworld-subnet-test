@@ -1,3 +1,19 @@
+# The MIT License (MIT)
+# Copyright © 2025 Eastworld AI
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+# documentation files (the "Software"), to deal in the Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
+# and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be included in all copies or substantial portions of
+# the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+# THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+# DEALINGS IN THE SOFTWARE.
 
 import asyncio
 import json
@@ -12,13 +28,11 @@ from functools import lru_cache
 from typing import Any, Annotated, Dict, List, Optional, Set, Tuple, TypedDict, Union
 
 import bittensor as bt
-import numpy as np
 import openai
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import RunnableConfig
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
-from sklearn.metrics.pairwise import cosine_similarity
 
 from eastworld.base.miner import BaseMinerNeuron
 from eastworld.miner.slam.grid import ANONYMOUS_NODE_PREFIX
@@ -64,6 +78,13 @@ class EnhancedJSONFileMemory:
                 "risk_assessments": [],
                 "landmark_metadata": {},
             }
+        
+        # Ensure all required keys exist
+        required_keys = ["goals", "plans", "reflections", "logs", "semantic_memories", 
+                         "risk_assessments", "landmark_metadata"]
+        for key in required_keys:
+            if key not in self.memory:
+                self.memory[key] = [] if key != "landmark_metadata" else {}
     
     def save(self, force=False):
         """Save memory to file with throttling to prevent excessive writes"""
@@ -205,21 +226,30 @@ class EnhancedJSONFileMemory:
     
     def get_nearest_risk_assessment(self, location: tuple, radius: float = 10.0) -> dict:
         """Get the nearest risk assessment within a radius"""
+        # Ensure risk_assessments key exists
+        if "risk_assessments" not in self.memory:
+            self.memory["risk_assessments"] = []
+            return None
+            
         if not self.memory["risk_assessments"]:
             return None
             
         nearest = None
         min_distance = float('inf')
         
-        for assessment in self.memory["risk_assessments"]:
-            distance = math.sqrt(
-                (location[0] - assessment["location"][0]) ** 2 + 
-                (location[1] - assessment["location"][1]) ** 2
-            )
-            
-            if distance <= radius and distance < min_distance:
-                min_distance = distance
-                nearest = assessment
+        try:
+            for assessment in self.memory["risk_assessments"]:
+                distance = math.sqrt(
+                    (location[0] - assessment["location"][0]) ** 2 + 
+                    (location[1] - assessment["location"][1]) ** 2
+                )
+                
+                if distance <= radius and distance < min_distance:
+                    min_distance = distance
+                    nearest = assessment
+        except Exception as e:
+            bt.logging.error(f"Error in get_nearest_risk_assessment: {e}")
+            return None
                 
         return nearest
     
@@ -926,41 +956,71 @@ class SeniorAgent(BaseMinerNeuron):
         # Fault tolerance layer
         graph_builder.add_node("Error Recovery", self.error_recovery)
         
-        # Connect the nodes
+        # Define our conditional routing function
+        def has_errors(state: AgentState):
+            if state["errors"]:
+                return "Error Recovery"
+            else:
+                return "Multi-Modal Perception"
+        
+        def continue_or_error(state: AgentState, destination: str):
+            if state["errors"]:
+                return "Error Recovery"
+            else:
+                return destination
+        
+        # Connect the nodes with simple and conditional edges
         graph_builder.add_edge(START, "Localization & Mapping")
-        graph_builder.add_edge("Localization & Mapping", "Multi-Modal Perception")
-        graph_builder.add_edge("Multi-Modal Perception", "Landmark Annotation")
-        graph_builder.add_edge("Landmark Annotation", "Risk Assessment")
-        graph_builder.add_edge("Risk Assessment", "After-Action Review")
         
-        graph_builder.add_edge("After-Action Review", "Grounding & Learning")
-        graph_builder.add_edge("Grounding & Learning", "Objective Reevaluation")
-        graph_builder.add_edge("Objective Reevaluation", "Action Selection")
+        # Add conditional routing from Localization & Mapping
+        graph_builder.add_conditional_edges(
+            "Localization & Mapping",
+            lambda state: "Error Recovery" if state["errors"] else "Multi-Modal Perception"
+        )
         
-        graph_builder.add_edge("Action Selection", "Action Execution")
-        graph_builder.add_edge("Action Execution", "Execution Monitoring")
+        # Add conditional edges for the rest of the nodes
+        graph_builder.add_conditional_edges(
+            "Multi-Modal Perception",
+            lambda state: "Error Recovery" if state["errors"] else "Landmark Annotation"
+        )
+        
+        graph_builder.add_conditional_edges(
+            "Landmark Annotation",
+            lambda state: "Error Recovery" if state["errors"] else "Risk Assessment"
+        )
+        
+        graph_builder.add_conditional_edges(
+            "Risk Assessment",
+            lambda state: "Error Recovery" if state["errors"] else "After-Action Review"
+        )
+        
+        graph_builder.add_conditional_edges(
+            "After-Action Review",
+            lambda state: "Error Recovery" if state["errors"] else "Grounding & Learning"
+        )
+        
+        graph_builder.add_conditional_edges(
+            "Grounding & Learning",
+            lambda state: "Error Recovery" if state["errors"] else "Objective Reevaluation"
+        )
+        
+        graph_builder.add_conditional_edges(
+            "Objective Reevaluation",
+            lambda state: "Error Recovery" if state["errors"] else "Action Selection"
+        )
+        
+        graph_builder.add_conditional_edges(
+            "Action Selection",
+            lambda state: "Error Recovery" if state["errors"] else "Action Execution"
+        )
+        
+        graph_builder.add_conditional_edges(
+            "Action Execution",
+            lambda state: "Error Recovery" if state["errors"] else "Execution Monitoring"
+        )
+        
+        # Final nodes end the graph
         graph_builder.add_edge("Execution Monitoring", END)
-        
-        # Error handling paths
-        graph_builder.add_edge("Localization & Mapping", "Error Recovery", 
-                               condition=lambda s: bool(s["errors"]))
-        graph_builder.add_edge("Multi-Modal Perception", "Error Recovery", 
-                               condition=lambda s: bool(s["errors"]))
-        graph_builder.add_edge("Landmark Annotation", "Error Recovery", 
-                               condition=lambda s: bool(s["errors"]))
-        graph_builder.add_edge("Risk Assessment", "Error Recovery", 
-                               condition=lambda s: bool(s["errors"]))
-        graph_builder.add_edge("After-Action Review", "Error Recovery", 
-                               condition=lambda s: bool(s["errors"]))
-        graph_builder.add_edge("Grounding & Learning", "Error Recovery", 
-                               condition=lambda s: bool(s["errors"]))
-        graph_builder.add_edge("Objective Reevaluation", "Error Recovery", 
-                               condition=lambda s: bool(s["errors"]))
-        graph_builder.add_edge("Action Selection", "Error Recovery", 
-                               condition=lambda s: bool(s["errors"]))
-        graph_builder.add_edge("Action Execution", "Error Recovery", 
-                               condition=lambda s: bool(s["errors"]))
-        
         graph_builder.add_edge("Error Recovery", END)
         
         return graph_builder.compile()
@@ -977,7 +1037,7 @@ class SeniorAgent(BaseMinerNeuron):
             initial_state = AgentState(
                 observation=synapse,
                 navigation_locations=[],
-                perception_state={},
+                perception_state={"spatial": {"is_narrow": False}},  # Initialize with default values
                 perception_entities=[],
                 reflection="",
                 action={},
@@ -1188,20 +1248,41 @@ class SeniorAgent(BaseMinerNeuron):
         try:
             synapse: Observation = state["observation"]
             
+            # Initialize perception state with defaults in case processing fails
+            state["perception_state"] = {
+                "spatial": {
+                    "open_directions": [],
+                    "blocked_directions": [],
+                    "average_distance": 0,
+                    "min_distance": 0,
+                    "max_distance": 0,
+                    "is_open_space": False,
+                    "is_narrow": False
+                },
+                "context": {"general_description": ""},
+                "keywords": []
+            }
+            
             # Process perception in parallel
-            perception_result = await self.perception.fuse_perceptions(
-                synapse.sensor.lidar,
-                synapse.perception.environment,
-                synapse.perception.objects,
-                synapse.perception.interactions
-            )
-            
-            # Store perception state
-            state["perception_state"] = perception_result
-            state["perception_entities"] = perception_result["entities"]
-            
-            # Add risks from perception
-            state["risks"] = perception_result["risks"]
+            try:
+                perception_result = await self.perception.fuse_perceptions(
+                    synapse.sensor.lidar,
+                    synapse.perception.environment,
+                    synapse.perception.objects,
+                    synapse.perception.interactions
+                )
+                
+                # Store perception state
+                state["perception_state"] = perception_result
+                state["perception_entities"] = perception_result.get("entities", [])
+                
+                # Add risks from perception
+                state["risks"] = perception_result.get("risks", [])
+            except Exception as e:
+                bt.logging.error(f"Perception processing error: {e}")
+                # We already have default values, so we can continue
+                state["perception_entities"] = []
+                state["risks"] = []
             
         except Exception as e:
             bt.logging.error(f"Multi-Modal Perception Error: {e}")
@@ -1293,25 +1374,37 @@ class SeniorAgent(BaseMinerNeuron):
             
             # Process risks from perception
             for risk in state["risks"]:
-                # Add risk to navigator's risk map
-                risk_level = risk.get("level", 0.5)
-                description = risk.get("description", "")
-                self.navigator.update_risk(x, y, risk_level, description)
-                
+                try:
+                    # Add risk to navigator's risk map
+                    risk_level = risk.get("level", 0.5)
+                    description = risk.get("description", "")
+                    self.navigator.update_risk(x, y, risk_level, description)
+                except Exception as e:
+                    bt.logging.error(f"Error processing risk: {e}")
+                    # Continue with next risk
+            
             # Environment-based risk assessment
-            if "narrow" in state["perception_state"].get("spatial", {}).get("is_narrow", False):
-                self.navigator.update_risk(x, y, 0.6, "Narrow passage detected")
+            try:
+                # Fix the type error - checking correctly for is_narrow boolean property
+                spatial = state["perception_state"].get("spatial", {})
+                if spatial.get("is_narrow", False):
+                    self.navigator.update_risk(x, y, 0.6, "Narrow passage detected")
+            except Exception as e:
+                bt.logging.error(f"Error in environment risk assessment: {e}")
                 
             # Get existing risk assessment for this location
-            existing_risk = self.memory.get_nearest_risk_assessment((x, y), 10.0)
-            if existing_risk:
-                bt.logging.info(f"Known risk at current location: {existing_risk['description']}")
-                state["risks"].append({
-                    "source": "memory",
-                    "level": existing_risk["risk_level"],
-                    "description": existing_risk["description"],
-                    "position": "current"
-                })
+            try:
+                existing_risk = self.memory.get_nearest_risk_assessment((x, y), 10.0)
+                if existing_risk:
+                    bt.logging.info(f"Known risk at current location: {existing_risk['description']}")
+                    state["risks"].append({
+                        "source": "memory",
+                        "level": existing_risk["risk_level"],
+                        "description": existing_risk["description"],
+                        "position": "current"
+                    })
+            except Exception as e:
+                bt.logging.error(f"Error getting existing risk assessment: {e}")
                 
         except Exception as e:
             bt.logging.error(f"Risk Assessment Error: {e}")
