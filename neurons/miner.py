@@ -26,7 +26,8 @@ from eastworld.base.miner import BaseMinerNeuron
 from eastworld.protocol import Observation
 from eastworld.miner.junior import JuniorAgent
 
-# from eastworld.miner.senior import SeniorAgent
+from eastworld.miner.senior import SeniorAgent
+from eastworld.miner.test import CheatMiner
 
 
 class WanderAgent(BaseMinerNeuron):
