@@ -20,6 +20,10 @@ You are an autonomous reasoning module responsible for reassessing current goals
    - Update the plan status based on reflection and state summary: **Done**, **Ongoing**, **Todo**
    - Ensure all planned actions are still executable, aligned with goals, and valid under current conditions.
    - Revise, remove, or reorder plan steps as needed. Keep focus and the plan items should not exceed 5.
+   - inspect action's target cannot be self, resulting in Result: self is not in sight. [FAILURE]
+    - If "In open space:" is True for "Blocked directions:" in spatial_data, It may not be possible to move.
+    - If "In narrow passage:" is True for "Blocked directions:" in spatial_data, It may not be possible to move.
+    -If talk_to gets no response from the same target twice, it may not talk.
 
 3. **Output the Updated Strategy**:
    - Use the format shown below.
