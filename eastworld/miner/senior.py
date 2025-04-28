@@ -14,7 +14,7 @@
 # THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
-
+import re
 import asyncio
 import json
 import math
@@ -851,10 +851,12 @@ class SeniorAgent(BaseMinerNeuron):
         self.step = 0
         
         # Initialize LLM client
-        self.llm = openai.AsyncOpenAI(base_url="https://openrouter.ai/api/v1",api_key="sk-or-v1-8888888888888888")
-        self.model_small = "google/gemini-2.0-flash-lite-001"
-        self.model_medium = "google/gemini-2.5-flash-preview"
-        self.model_large = "google/gemini-2.5-flash-preview"
+        self.llm = openai.AsyncOpenAI(base_url="https://openrouter.ai/api/v1",api_key="sk-or-v1-888888888888888888")
+        #
+        self.llm2 = openai.AsyncOpenAI(base_url="https://open.888888888888.cn/api/paas/v4",api_key="88888888888888888.8z8T45t2bFLRUY8B")
+        self.model_small = "google/gemini-2.5-flash-preview"
+        self.model_medium = "glm-z1-airx"
+        self.model_large = "glm-z1-airx"
         
         # Initialize memory system
         self.memory = EnhancedJSONFileMemory(memory_file_path, self.llm)
@@ -1047,6 +1049,7 @@ class SeniorAgent(BaseMinerNeuron):
             )
             
             # Try cached action first for efficiency
+            bt.logging.info(f"last_action: {synapse}")
             cached_state = self._try_cached_action(initial_state)
             if cached_state["cached_action"]:
                 bt.logging.info(f"Using cached action: {cached_state['action']}")
@@ -1332,11 +1335,13 @@ class SeniorAgent(BaseMinerNeuron):
             bt.logging.debug(f"Landmark Annotation Prompt: {prompt}")
             response = await self.llm.chat.completions.create(
                 model=self.model_small,
-                messages=[{"role": "user", "content": prompt}],
+                messages=[{"role": "user", "content": prompt}]
             )
-            bt.logging.debug(f"Landmark Annotation Response: {response}")
-
-            node_data = response.choices[0].message.content.splitlines()
+            
+            raw_content = response.choices[0].message.content
+            cleaned_content = re.sub(r'<think>.*?</think>', '', raw_content, flags=re.DOTALL).strip()
+            bt.logging.debug(f"Landmark Annotation Response: {cleaned_content}")
+            node_data = cleaned_content.splitlines()
             node_id = node_data[0].strip()
             node_desc = node_data[1].strip() if len(node_data) > 1 else ""
             if node_id != "NA":
@@ -1427,11 +1432,11 @@ class SeniorAgent(BaseMinerNeuron):
 
             # Prepare context for reflection
             recent_reflections = ""
-            for idx, r in enumerate(self.memory.memory["reflections"][-3:]):
+            for idx, r in enumerate(self.memory.memory["reflections"][-1:]):
                 recent_reflections += f"  {idx + 1}. {r}\n"
                 
             recent_action_log = ""
-            for idx, l in enumerate(self.memory.memory["logs"][-10:]):
+            for idx, l in enumerate(self.memory.memory["logs"][-6:]):
                 repeat_str = (
                     f" (repeated {l['repeat_times']} times)"
                     if l["repeat_times"] > 1
@@ -1500,12 +1505,13 @@ class SeniorAgent(BaseMinerNeuron):
             
             prompt = self.after_action_review_prompt.format(**prompt_context)
             bt.logging.debug(f"After Action Review Prompt: {prompt}")
-            response = await self.llm.chat.completions.create(
+            response = await self.llm2.chat.completions.create(
                 model=self.model_large,
-                messages=[{"role": "user", "content": prompt}],
+                messages=[{"role": "user", "content": prompt}]
             )
-
-            reflection = response.choices[0].message.content.strip()
+            raw_content = response.choices[0].message.content
+            cleaned_content = re.sub(r'<think>.*?</think>', '', raw_content, flags=re.DOTALL).strip()
+            reflection = cleaned_content
             bt.logging.debug(f"After Action Review Response: {reflection}")
             state["reflection"] = reflection
             self.memory.push_reflection(reflection)
@@ -1609,13 +1615,14 @@ class SeniorAgent(BaseMinerNeuron):
                 "similar_reflections": similar_reflection_text,
             }
             prompt = self.objective_reevaluation_prompt.format(**prompt_context)
-            bt.logging.debug(f"Objective Reevaluation Prompt: {prompt}")
+            #bt.logging.debug(f"Objective Reevaluation Prompt: {prompt}")
             response = await self.llm.chat.completions.create(
-                model=self.model_large,
+                model=self.model_small,
                 messages=[{"role": "user", "content": prompt}],
             )
-
-            content = response.choices[0].message.content.strip().split("\n\n")
+            raw_content = response.choices[0].message.content
+            cleaned_content = re.sub(r'<think>.*?</think>', '', raw_content, flags=re.DOTALL).strip()
+            content = cleaned_content.split("\n\n")
             bt.logging.debug(f"Objective Reevaluation Response: {content}")
             
             if len(content) >= 2:
@@ -1713,24 +1720,25 @@ class SeniorAgent(BaseMinerNeuron):
             }
             
             prompt = self.action_selection_prompt.format(**prompt_context)
-            bt.logging.debug(f"Action Selection Prompt: {prompt}")
+            prompt += "\n\nIMPORTANT: You MUST select one of the provided tools/functions to execute the action. Do not provide code or text responses."
+            #bt.logging.debug(f"Action Selection Prompt: {prompt}")
             
             # Try to use a faster model first, fallback to larger if needed
             try:
                 response = await self.llm.chat.completions.create(
-                    model=self.model_medium,
+                    model=self.model_small,
                     messages=[{"role": "user", "content": prompt}],
                     tools=[*synapse.action_space, *self.local_action_space],
-                    tool_choice="auto",
+                    tool_choice="auto", 
                     timeout=5  # Shorter timeout for faster response
                 )
             except Exception as e:
                 bt.logging.warning(f"Medium model failed, falling back to large: {e}")
                 response = await self.llm.chat.completions.create(
-                    model=self.model_large,
+                    model=self.model_small,
                     messages=[{"role": "user", "content": prompt}],
                     tools=[*synapse.action_space, *self.local_action_space],
-                    tool_choice="auto"
+                    tool_choice="auto",  
                 )
 
             bt.logging.debug(f"Action Selection Response: {response}")
