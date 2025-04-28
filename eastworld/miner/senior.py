@@ -853,7 +853,7 @@ class SeniorAgent(BaseMinerNeuron):
         # Initialize LLM client
         self.llm = openai.AsyncOpenAI(base_url="https://openrouter.ai/api/v1",api_key="sk-or-v1-888888888888888888")
         #
-        self.llm2 = openai.AsyncOpenAI(base_url="https://open.888888888888.cn/api/paas/v4",api_key="88888888888888888.8z8T45t2bFLRUY8B")
+        self.llm2 = openai.AsyncOpenAI(base_url="https://open.888888888888.cn/api/paas/v4",api_key="88888888888888888.8888")
         self.model_small = "google/gemini-2.5-flash-preview"
         self.model_medium = "glm-z1-airx"
         self.model_large = "glm-z1-airx"
