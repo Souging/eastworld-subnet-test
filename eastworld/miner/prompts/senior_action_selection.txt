@@ -20,6 +20,9 @@ The function list and definitions are provided separately via the SDK. You do no
 3. Select the most appropriate function(s) that align with the current plan and are valid under the current context (e.g., not blocked, tool available).
 4. Use inventory and sensor data to avoid repeating failed actions or unsafe calls.
 5. Avoid suggesting actions that rely on unavailable tools, inaccessible targets, or previously failed steps unless the situation has changed.
+6. inspect action's target cannot be self, resulting in Result: self is not in sight. [FAILURE]
+7. If "In open space: True" is set for "Blocked directions:" in spatial_data, movement might be impossible.
+8. If "In narrow passage: True" is set for "Blocked directions:" in spatial_data, movement might be impossible.
 
 ---
 
