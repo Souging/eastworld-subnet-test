@@ -23,7 +23,8 @@ The function list and definitions are provided separately via the SDK. You do no
 6. inspect action's target cannot be self, resulting in Result: self is not in sight. [FAILURE]
 7. If "In open space:" is True for "Blocked directions:" in spatial_data, It may not be possible to move.
 8. If "In narrow passage:" is True for "Blocked directions:" in spatial_data, It may not be possible to move.
-9. If talk_to gets no response from the same target twice, it may not talk.
+9. If talk_to gets no response from the same agents twice, it may not talk.
+10. If the Action correctly returns only FAILURE and SUCCESS, and it's empty, it's likely a network issue. You can try again.
 
 ---
 
