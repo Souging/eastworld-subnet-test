@@ -12,7 +12,7 @@ You are **not required** to decide the next action. Instead, your output should 
 - **Items in Inventory**: Available tools or resources.
 - **Navigation Points**: Locations you have marked in the naviation system.
 - **Recent Reflections** (optional): Internal evaluations from earlier steps.
-- **Recent Action Log**: Recent behavior traces.
+- **Recent Action Log**: Recent behavior traces.(log 1-10, 1 being the oldest, 10 being the newest,If the log is empty, it is initialized. If the result of a log is empty, ignore it.)
 
 ---
 
