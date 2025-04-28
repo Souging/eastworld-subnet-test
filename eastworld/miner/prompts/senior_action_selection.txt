@@ -21,8 +21,9 @@ The function list and definitions are provided separately via the SDK. You do no
 4. Use inventory and sensor data to avoid repeating failed actions or unsafe calls.
 5. Avoid suggesting actions that rely on unavailable tools, inaccessible targets, or previously failed steps unless the situation has changed.
 6. inspect action's target cannot be self, resulting in Result: self is not in sight. [FAILURE]
-7. If "In open space: True" is set for "Blocked directions:" in spatial_data, movement might be impossible.
-8. If "In narrow passage: True" is set for "Blocked directions:" in spatial_data, movement might be impossible.
+7. If "In open space:" is True for "Blocked directions:" in spatial_data, It may not be possible to move.
+8. If "In narrow passage:" is True for "Blocked directions:" in spatial_data, It may not be possible to move.
+9. If talk_to gets no response from the same target twice, it may not talk.
 
 ---
 
