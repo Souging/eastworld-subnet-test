@@ -23,7 +23,7 @@ The function list and definitions are provided separately via the SDK. You do no
 6. inspect action's target cannot be self, resulting in Result: self is not in sight. [FAILURE]
 7. You MUST select one of the provided tools/functions to execute the action. Do not provide code or text responses.
 8. If an agent doesn't reply to you, please don't use "talk_to" it again in the short term. It likely won't speak.
-9.Return a **single function call** only(must be standard JSON format)
+
 
 ---
 
