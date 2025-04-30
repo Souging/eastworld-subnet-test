@@ -16,15 +16,12 @@ The function list and definitions are provided separately via the SDK. You do no
 ### Instructions:
 
 1. Understand the current situation by reviewing all available inputs, including goals, plans, reflection, sensor readings, and inventory.
-2. Use the reflection and perception data to assess what the next logical step should be.
+2. Use the reflection and perception data to assess what the next logical step should be.(Actions should be consistent with reflection.)
 3. Select the most appropriate function(s) that align with the current plan and are valid under the current context (e.g., not blocked, tool available).
 4. Use inventory and sensor data to avoid repeating failed actions or unsafe calls.
 5. Avoid suggesting actions that rely on unavailable tools, inaccessible targets, or previously failed steps unless the situation has changed.
 6. inspect action's target cannot be self, resulting in Result: self is not in sight. [FAILURE]
-7. If "In open space:" is True for "Blocked directions:" in spatial_data, It may not be possible to move.
-8. If "In narrow passage:" is True for "Blocked directions:" in spatial_data, It may not be possible to move.
-9. If talk_to gets no response from the same agents twice, the agent maybe not talk
-10. the Action correctly returns only FAILURE and SUCCESS, and if it's empty, it's likely a network issue. You can try again.
+7. You MUST select one of the provided tools/functions to execute the action. Do not provide code or text responses.
 
 ---
 
