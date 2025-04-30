@@ -12,14 +12,14 @@ You are **not required** to decide the next action. Instead, your output should 
 - **Items in Inventory**: Available tools or resources.
 - **Navigation Points**: Locations you have marked in the naviation system.
 - **Recent Reflections** (optional): Internal evaluations from earlier steps.
-- **Recent Action Log**: Recent behavior traces.(log 1-10, 1 being the oldest, 10 being the newest,If the log is empty, it is initialized. If the result of a log is empty, ignore it.)
+- **Recent Action Log**: Recent behavior traces.(log 1-15, 1 being the oldest, 15 being the newest,If the log is empty, it is initialized. If the result of a log is empty, ignore it.)
 
 ---
 
 ### Your Responsibilities:
 
 1. **Reflect on the Last Action**:
-   - Analyze the last item in the action log.
+   - Analyze the last item in the action log.(If the last action was "talk_to" an agent and they didn't reply, it means they can't talk. Please don't talk to them again in the reflection.)
    - Was the outcome successful? If not, what failed — the strategy, the execution, or the tools?
    - Were there any unexpected results, inefficiencies, or obstacles encountered?
    - Was this action aligned with the current plan?
