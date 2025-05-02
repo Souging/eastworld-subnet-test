@@ -19,11 +19,12 @@ You are **not required** to decide the next action. Instead, your output should 
 ### Your Responsibilities:
 
 1. **Reflect on the Last Action**:
+    -  Do not perform any "inspect" or "talk_to" actions on the agent unless necessary. It's pointless.
    - Analyze the last item in the action log.(If the last action was "talk_to" an agent and they didn't reply, it means they can't talk. Please don't talk to them again in the reflection.)
    - Was the outcome successful? If not, what failed — the strategy, the execution, or the tools?
    - Were there any unexpected results, inefficiencies, or obstacles encountered?
    - Was this action aligned with the current plan?
-
+   
 2. **Assess the Current Situation**:
    - What environmental or positional changes have occurred?
    - Are there new obstacles or hazards?
