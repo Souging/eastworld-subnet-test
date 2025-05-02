@@ -23,8 +23,8 @@ You are an autonomous reasoning module responsible for reassessing current goals
    - inspect action's target cannot be self, resulting in Result: self is not in sight. [FAILURE]
     - If "In open space:" is True for "Blocked directions:" in spatial_data, It may not be possible to move.
     - If "In narrow passage:" is True for "Blocked directions:" in spatial_data, It may not be possible to move.
-    -If talk_to gets no response from the same agents twice, the agent maybe not talk.
     - the Action correctly returns only FAILURE and SUCCESS, and if it's empty, it's likely a network issue. You can try again.
+    - Do not perform any "inspect" or "talk_to" actions on the agent unless necessary. It's pointless.
 
 3. **Output the Updated Strategy**:
    - Use the format shown below.
