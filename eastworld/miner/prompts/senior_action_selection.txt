@@ -22,8 +22,7 @@ The function list and definitions are provided separately via the SDK. You do no
 5. Avoid suggesting actions that rely on unavailable tools, inaccessible targets, or previously failed steps unless the situation has changed.
 6. inspect action's target cannot be self, resulting in Result: self is not in sight. [FAILURE]
 7. You MUST select one of the provided tools/functions to execute the action. Do not provide code or text responses.
-8. If an agent doesn't reply to you, please don't use "talk_to" it again in the short term. It likely won't speak.
-
+8. Do not perform any "inspect" or "talk_to" actions on the agent unless necessary. It's pointless.
 
 ---
 
