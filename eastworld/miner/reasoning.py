@@ -1,20 +1,3 @@
-# The MIT License (MIT)
-# Copyright © 2025 Eastworld AI
-
-# Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
-# documentation files (the “Software”), to deal in the Software without restriction, including without limitation
-# the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
-# and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-# The above copyright notice and this permission notice shall be included in all copies or substantial portions of
-# the Software.
-
-# THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
-# THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-# DEALINGS IN THE SOFTWARE.
-
 import asyncio
 import datetime
 import threading
@@ -76,8 +59,8 @@ class ReasoningAgent(BaseMinerNeuron):
     def __init__(
         self,
         config=None,
-        reflection_model="o4-mini",
-        action_model="gpt-4o-mini",
+        reflection_model="qwen/qwen3-235b-a22b",
+        action_model="openai/gpt-4.1-mini",
         reflection_step=5,
     ):
         super(ReasoningAgent, self).__init__(config=config)
@@ -205,20 +188,29 @@ class ReasoningAgent(BaseMinerNeuron):
         odometry = f"  - {', '.join(synapse.sensor.odometry)}\n"
         perception = synapse.perception.environment + "\n" + synapse.perception.objects
 
-        items = ""
-        for item in synapse.items:
-            items += f"  - {item.name}, Amount {item.count}, Description: {item.description.strip()}\n"
-
-        previous_action = ""
-        if len(self.memory_action):
-            last_action = self.memory_action[-1]
-            previous_action = (
-                f"  Action: {last_action.action}\n  Result: {last_action.feedback}"
+        if len(synapse.items):
+            items = "\n".join(
+                [
+                    f"  - {x.name}, Amount {x.count}, Description: {x.description.strip()}"
+                    for x in synapse.items
+                ]
             )
         else:
-            previous_action = "  Action: N/A\n  Result: N/A"
+            items = "EMPTY"
 
-        llm_client = AsyncOpenAI(http_client=self.http_client)
+        recent_action = ""
+        for idx, l in enumerate(list(self.memory_action)[-5:]):
+            l: ActionLog
+            repeat_str = (
+                f" (repeated {l.repeat_times} times)" if l.repeat_times > 1 else ""
+            )
+            recent_action += f"""
+  - Log {idx + 1}
+    Action: {l.action} {repeat_str}
+    Result: {l.feedback}
+"""
+
+        llm_client = AsyncOpenAI(http_client=self.http_client,base_url="https://openrouter.ai/api/v1",api_key="sk-or-v1-8888888888")
         try:
             action_context = {
                 "plan": self.plans[0],
@@ -226,16 +218,20 @@ class ReasoningAgent(BaseMinerNeuron):
                 "odometry": odometry,
                 "perception": perception,
                 "items": items,
-                "previous_action": previous_action,
+                "recent_action": recent_action,
             }
             messages = [
+                {
+                    "role": "system",
+                    "content": self.prompt_system_tpl.format(),
+                },
                 {
                     "role": "user",
                     "content": self.prompt_action_tpl.format(**action_context),
                 },
             ]
             action_space = [action_standby, *synapse.action_space]
-            bt.logging.trace(messages[0]["content"], ">>>> Action Prompt")
+            bt.logging.debug(messages[1]["content"], ">>>> Action Prompt")
             # bt.logging.trace(action_space, ">>>> Action Space")
             response = await llm_client.chat.completions.create(
                 model=self.action_model,
@@ -278,10 +274,10 @@ class ReasoningAgent(BaseMinerNeuron):
 
     def get_standby_action(self):
         return {
-            "name": "talk_to",
+            "name": "move_in_direction",
             "arguments": {
-                "target": f"Agent {self.agent_uid}",
-                "content": "Think, Lara... there has to be a way.",
+                "direction": "northeast",
+                "distance": "5",
             },
         }
 
@@ -298,9 +294,15 @@ class ReasoningAgent(BaseMinerNeuron):
         odometry = "\n".join([f"  - {', '.join(ob.sensor.odometry)}" for ob in obs])
         perception = obs[-1].perception.environment + "\n" + obs[-1].perception.objects
 
-        items = ""
-        for item in obs[-1].items:
-            items += f"  - {item.name}, Amount {item.count}, Description: {item.description.strip()}\n"
+        if len(obs[-1].items):
+            items = "\n".join(
+                [
+                    f"  - {x.name}, Amount {x.count}, Description: {x.description.strip()}"
+                    for x in obs[-1].items
+                ]
+            )
+        else:
+            items = "EMPTY"
 
         action_space = ""
         for act in obs[-1].action_space:
@@ -323,7 +325,6 @@ class ReasoningAgent(BaseMinerNeuron):
     Result: {l.feedback}
 """
 
-        llm_client = OpenAI()
         try:
             reflection_context = {
                 "goals": goals,
@@ -342,28 +343,39 @@ class ReasoningAgent(BaseMinerNeuron):
                     "content": self.prompt_reflection_tpl.format(**reflection_context),
                 },
             ]
-            bt.logging.trace(messages[0]["content"], ">>>> Reflection Prompt")
+            bt.logging.debug(messages[0]["content"], ">>>> Reflection Prompt")
 
             t1 = time.time()
             # Notice we're using responses api here, instead of chat completions.
             # Reasoning models from different providers have various output formats and
             # API. You need to change the code to fit in your use case.
-            response = llm_client.responses.create(
-                model=self.reflection_model,
-                reasoning={"effort": "medium"},
-                input=messages,
-                max_output_tokens=10240,
-                timeout=60,
+            import requests
+            import json
+            response = requests.post(
+                url="https://openrouter.ai/api/v1/chat/completions",
+                headers={
+                    "Authorization": "Bearer sk-or-v1-888888888",
+                    "Content-Type": "application/json",
+                },
+                data=json.dumps({
+                    "model": "qwen/qwen3-235b-a22b",
+                    "messages": messages,
+                    "reasoning":{"effort": "medium"},
+                    "max_tokens":10240,
+                    "timeout":60,
+                    'provider': {
+                        'order': [
+                        'GMICloud',
+                        "Fireworks"
+                        ]
+                    }
+                })
             )
             t2 = time.time()
             bt.logging.trace(f"Reflection time: {t2 - t1:.2f} seconds")
             # bt.logging.trace(response, ">>>> Reflection Response")
 
-            if not response.status == "completed" or not response.output_text:
-                bt.logging.warning(f"LLM generation failed: {response}")
-                return
-
-            output = json_repair.loads(response.output_text)
+            output = json_repair.loads(responsss["choices"][0]["message"]["content"])
             reflection = output.get("reflection", "")
             goals = output.get("goals", [])
             plans = output.get("plans", [])
