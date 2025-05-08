@@ -372,6 +372,7 @@ class ReasoningAgent(BaseMinerNeuron):
                 })
             )
             t2 = time.time()
+            responsss = response.json()
             bt.logging.trace(f"Reflection time: {t2 - t1:.2f} seconds")
             # bt.logging.trace(response, ">>>> Reflection Response")
 
